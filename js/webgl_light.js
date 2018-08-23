@@ -1,0 +1,225 @@
+
+//var VSHADER_SOURCE = `
+//
+//	attribute vec4 a_Color;
+//	attribute vec4 a_Position;
+//	attribute vec4 a_Normal;
+//
+//	uniform vec3 u_lightPosition;
+//	uniform vec3 u_ambientColor;
+//	uniform vec4 u_lightColor;
+//	uniform mat4 u_MVPMatrix;
+//	uniform mat4 u_NormalMatrix;
+//	uniform mat4 u_ModelMatrix;
+//
+//	varying vec4 v_Color;
+//
+//	void main() {
+//
+//		gl_Position = u_MVPMatrix * a_Position;
+//
+//		vec3 position = vec3(u_ModelMatrix * a_Position);		
+//		vec3 lightDir = normalize(u_lightPosition - position);	
+//		vec3 normal = normalize(vec3(u_NormalMatrix * a_Normal));
+//		float nDotL = max(dot(normal, lightDir), 0.0);
+//		vec3 ambient = u_ambientColor * a_Color.rgb;
+//		vec3 diffuse = u_lightColor.rgb * nDotL * a_Color.rgb;
+//		v_Color = vec4(diffuse + ambient, a_Color.a);
+//		// v_Color = a_Color;
+//	}
+//`;
+//
+//var FSHADER_SOURCE =  `
+//	precision mediump float;
+//	varying vec4 v_Color;
+//	void main() {
+//		gl_FragColor =  v_Color;
+//	}
+//`;
+
+
+
+var VSHADER_SOURCE = `
+
+	attribute vec4 a_Color;
+	attribute vec4 a_Position;
+	attribute vec4 a_Normal;
+
+	uniform mat4 u_MVPMatrix;
+	uniform mat4 u_NormalMatrix;
+	uniform mat4 u_ModelMatrix;
+
+	varying vec4 v_Color;
+	varying vec3 v_Position;
+	varying vec3 v_Normal;
+	
+	void main() {
+
+		gl_Position = u_MVPMatrix * a_Position;
+		v_Position = vec3(u_ModelMatrix * a_Position);	
+		v_Normal = normalize(vec3(u_NormalMatrix * a_Normal));
+		v_Color = a_Color;
+	}
+`;
+
+var FSHADER_SOURCE =  `
+	precision mediump float;
+
+	uniform vec4 u_lightColor;
+	uniform vec3 u_lightPosition;
+	uniform vec3 u_ambientColor;
+
+	varying vec4 v_Color;
+	varying vec3 v_Position;
+	varying vec3 v_Normal;
+
+	void main() {
+		
+		vec3 lightDir = normalize(u_lightPosition - v_Position);	
+		float nDotL = max(dot(v_Normal, lightDir), 0.0);
+		
+		vec3 ambient = u_ambientColor * v_Color.rgb;
+		vec3 diffuse = u_lightColor.rgb * nDotL * v_Color.rgb;
+
+		gl_FragColor =  vec4(diffuse + ambient, v_Color.a);
+	}
+`;
+
+
+var ROTATE = true;  
+var _angle = 0;
+
+var LIGHT_COLOR = [1.0, 1.0, 1.0, 1.0];
+var AMBIENT_COLOR = [0.2, 0.2, 0.2];
+var LIGHT_POSITION = [2.0, 2.0, 2.0];
+  
+ 
+function gl_Init(canvas) {
+	
+	gl.clearColor(0.0, 0.0, 0.0, 1.0);
+	gl.viewport(0, 0, canvas.width, canvas.height);
+	gl.enable(gl.DEPTH_TEST);
+}
+   
+
+function angleChange(deltaTime) {
+	_angle += 10 * deltaTime;	
+	_angle = _angle % 360;
+}
+  
+  
+
+function initLightAttributes(gl) {
+
+	var u_ambientColor = gl.getUniformLocation(gl.shaderProgram, "u_ambientColor");
+	gl.uniform3fv(u_ambientColor, new Float32Array(AMBIENT_COLOR));
+
+	var u_lightColor = gl.getUniformLocation(gl.shaderProgram, "u_lightColor");
+	gl.uniform4fv(u_lightColor, new Float32Array(LIGHT_COLOR));
+		
+	var u_lightPosition = gl.getUniformLocation(gl.shaderProgram, "u_lightPosition");
+	gl.uniform3fv(u_lightPosition, new Float32Array(LIGHT_POSITION));
+}
+  
+
+
+function getViewPorjectionMatrix(aspect) {
+	var projMat = mat4.create();	
+	mat4.perspective(projMat, 45.0 * Math.PI / 180, aspect, 0.1, 100);	
+		
+	var viewMat = mat4.create(); 		
+	mat4.lookAt(viewMat, [3.0, 3.0, 7.0], [0.0, 0.0, 0.0], [0.0, 1.0, 0.0]);
+		
+	var mvMatrix = mat4.create();
+	mat4.multiply(mvMatrix, projMat, viewMat);
+
+	return mvMatrix;
+}
+
+
+function drawModel(gl, model, vpMatrix) {
+	
+	// Model matrix
+	let modelMatrix = mat4.create();	
+
+	mat4.translate(modelMatrix, modelMatrix, model.position);
+	mat4.rotate(modelMatrix, modelMatrix, _angle * Math.PI / 180, [0.0, 1.0, 0.0]);
+	mat4.scale(modelMatrix, modelMatrix, model.scale);	
+		
+	let u_ModelMatrix = gl.getUniformLocation(gl.shaderProgram, "u_ModelMatrix");
+	gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix);
+
+
+	// Normal matrix
+	let normalMatrix = mat4.create();	
+	mat4.invert(normalMatrix, modelMatrix);
+	mat4.transpose(normalMatrix, normalMatrix);		
+		
+	let u_NormalMatrix = gl.getUniformLocation(gl.shaderProgram, "u_NormalMatrix");
+	gl.uniformMatrix4fv(u_NormalMatrix, false, normalMatrix);
+
+
+	// Model View Projection matrix
+	let mvpMatrix = mat4.create();
+	mat4.multiply(mvpMatrix, vpMatrix, modelMatrix);
+
+	let u_mvpMatrix = gl.getUniformLocation(gl.shaderProgram, "u_MVPMatrix");
+	gl.uniformMatrix4fv(u_mvpMatrix, false, mvpMatrix);
+
+	// Draw mesh
+	let vao = model.mesh.vao;
+
+	gl.bindVertexArray(vao);
+	gl.drawElements(gl.TRIANGLES, model.mesh.indices.length, gl.UNSIGNED_BYTE, 0);
+	gl.bindVertexArray(null);
+
+}
+
+ 
+window.onload = function(){
+
+	let canvas = document.getElementById("glCanvas");	
+	let gl = initWebGL(canvas);
+
+	if (!gl) {		
+		console.log("WebGL is not initializing!");
+		return;
+	}
+
+	let aspect = canvas.width / canvas.height;			
+	let shaderProgram = createShaderProgram(gl, FSHADER_SOURCE, VSHADER_SOURCE);	
+	
+	gl.useProgram(shaderProgram);
+	gl.shaderProgram = shaderProgram;	
+	
+	let model = CreateCube();
+	model.init(gl);
+	
+	let vpMatrix = getViewPorjectionMatrix(aspect);
+		
+	initLightAttributes(gl);		
+	gl_Init(canvas);	
+
+	(function animloop(){		
+		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+		drawModel(gl, model, vpMatrix);
+
+		if (ROTATE) {
+			angleChange(1.0 / 60.0);
+		}
+		requestAnimFrame(animloop);		
+	})();
+}
+
+
+window.requestAnimFrame = (function(){
+      return  window.requestAnimationFrame       || 
+              window.webkitRequestAnimationFrame || 
+              window.mozRequestAnimationFrame    || 
+              window.oRequestAnimationFrame      || 
+              window.msRequestAnimationFrame     ||
+         function(callback, element) {
+           return window.setTimeout(callback, 1000/60);
+         };
+    })(); 
