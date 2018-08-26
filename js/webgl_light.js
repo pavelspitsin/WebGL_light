@@ -1,5 +1,6 @@
+'use strict';
 
-//var VSHADER_SOURCE = `
+//const VSHADER_SOURCE = `
 //
 //	attribute vec4 a_Color;
 //	attribute vec4 a_Position;
@@ -29,7 +30,7 @@
 //	}
 //`;
 //
-//var FSHADER_SOURCE =  `
+//const FSHADER_SOURCE =  `
 //	precision mediump float;
 //	varying vec4 v_Color;
 //	void main() {
@@ -39,11 +40,12 @@
 
 
 
-var VSHADER_SOURCE = `
+const VSHADER_SOURCE = `
 
 	attribute vec4 a_Color;
 	attribute vec4 a_Position;
 	attribute vec4 a_Normal;
+	attribute vec2 a_TexCoord;
 
 	uniform mat4 u_MVPMatrix;
 	uniform mat4 u_NormalMatrix;
@@ -52,6 +54,7 @@ var VSHADER_SOURCE = `
 	varying vec4 v_Color;
 	varying vec3 v_Position;
 	varying vec3 v_Normal;
+	varying vec2 v_TexCoord;
 	
 	void main() {
 
@@ -59,12 +62,14 @@ var VSHADER_SOURCE = `
 		v_Position = vec3(u_ModelMatrix * a_Position);	
 		v_Normal = normalize(vec3(u_NormalMatrix * a_Normal));
 		v_Color = a_Color;
+		v_TexCoord = a_TexCoord;
 	}
 `;
 
-var FSHADER_SOURCE =  `
+const FSHADER_SOURCE =  `
 	precision mediump float;
 
+	uniform sampler2D u_Sampler;
 	uniform vec4 u_lightColor;
 	uniform vec3 u_lightPosition;
 	uniform vec3 u_ambientColor;
@@ -72,6 +77,7 @@ var FSHADER_SOURCE =  `
 	varying vec4 v_Color;
 	varying vec3 v_Position;
 	varying vec3 v_Normal;
+	varying vec2 v_TexCoord;
 
 	void main() {
 		
@@ -80,27 +86,24 @@ var FSHADER_SOURCE =  `
 		
 		vec3 ambient = u_ambientColor * v_Color.rgb;
 		vec3 diffuse = u_lightColor.rgb * nDotL * v_Color.rgb;
-
-		gl_FragColor =  vec4(diffuse + ambient, v_Color.a);
+		vec4 color =  vec4(diffuse + ambient, v_Color.a);
+		color *= texture2D(u_Sampler, v_TexCoord);
+		gl_FragColor = color;
 	}
 `;
 
 
-var ROTATE = true;  
-var _angle = 0;
+const ROTATE = true;  
 
-var LIGHT_COLOR = [1.0, 1.0, 1.0, 1.0];
-var AMBIENT_COLOR = [0.2, 0.2, 0.2];
-var LIGHT_POSITION = [2.0, 2.0, 2.0];
-  
+const LIGHT_COLOR = [1.0, 1.0, 1.0, 1.0];
+const AMBIENT_COLOR = [0.2, 0.2, 0.2];
+const LIGHT_POSITION = [2.0, 2.0, 2.0];
+
+
+let _angle = 0;
+let _resourceManager = null;
  
-function gl_Init(canvas) {
-	
-	gl.clearColor(0.0, 0.0, 0.0, 1.0);
-	gl.viewport(0, 0, canvas.width, canvas.height);
-	gl.enable(gl.DEPTH_TEST);
-}
-   
+  
 
 function angleChange(deltaTime) {
 	_angle += 10 * deltaTime;	
@@ -111,26 +114,26 @@ function angleChange(deltaTime) {
 
 function initLightAttributes(gl) {
 
-	var u_ambientColor = gl.getUniformLocation(gl.shaderProgram, "u_ambientColor");
+	let u_ambientColor = gl.getUniformLocation(gl.shaderProgram, "u_ambientColor");
 	gl.uniform3fv(u_ambientColor, new Float32Array(AMBIENT_COLOR));
 
-	var u_lightColor = gl.getUniformLocation(gl.shaderProgram, "u_lightColor");
+	let u_lightColor = gl.getUniformLocation(gl.shaderProgram, "u_lightColor");
 	gl.uniform4fv(u_lightColor, new Float32Array(LIGHT_COLOR));
 		
-	var u_lightPosition = gl.getUniformLocation(gl.shaderProgram, "u_lightPosition");
+	let u_lightPosition = gl.getUniformLocation(gl.shaderProgram, "u_lightPosition");
 	gl.uniform3fv(u_lightPosition, new Float32Array(LIGHT_POSITION));
 }
   
 
 
 function getViewPorjectionMatrix(aspect) {
-	var projMat = mat4.create();	
+	let projMat = mat4.create();	
 	mat4.perspective(projMat, 45.0 * Math.PI / 180, aspect, 0.1, 100);	
 		
-	var viewMat = mat4.create(); 		
+	let viewMat = mat4.create(); 		
 	mat4.lookAt(viewMat, [3.0, 3.0, 7.0], [0.0, 0.0, 0.0], [0.0, 1.0, 0.0]);
 		
-	var mvMatrix = mat4.create();
+	let mvMatrix = mat4.create();
 	mat4.multiply(mvMatrix, projMat, viewMat);
 
 	return mvMatrix;
@@ -139,6 +142,8 @@ function getViewPorjectionMatrix(aspect) {
 
 function drawModel(gl, model, vpMatrix) {
 	
+	let mesh = model.mesh;
+
 	// Model matrix
 	let modelMatrix = mat4.create();	
 
@@ -166,18 +171,29 @@ function drawModel(gl, model, vpMatrix) {
 	let u_mvpMatrix = gl.getUniformLocation(gl.shaderProgram, "u_MVPMatrix");
 	gl.uniformMatrix4fv(u_mvpMatrix, false, mvpMatrix);
 
+
+	if (mesh.isUseTexture) {
+
+		var u_Sampler = gl.getUniformLocation(gl.shaderProgram, "u_Sampler");
+		gl.uniform1i(u_Sampler, 0);
+
+		gl.activeTexture(gl.TEXTURE0);
+		gl.bindTexture(gl.TEXTURE_2D, mesh.texture.object);
+	}
+
+
 	// Draw mesh
-	let vao = model.mesh.vao;
+	let vao = mesh.vao;
 
 	gl.bindVertexArray(vao);
-	gl.drawElements(gl.TRIANGLES, model.mesh.indices.length, gl.UNSIGNED_BYTE, 0);
+	gl.drawElements(gl.TRIANGLES, mesh.indices.length, gl.UNSIGNED_BYTE, 0);
 	gl.bindVertexArray(null);
 
 }
 
- 
-window.onload = function(){
 
+function start() {
+	
 	let canvas = document.getElementById("glCanvas");	
 	let gl = initWebGL(canvas);
 
@@ -186,19 +202,32 @@ window.onload = function(){
 		return;
 	}
 
+	// GL init
+	gl.clearColor(0.0, 0.0, 0.0, 1.0);
+	gl.viewport(0, 0, canvas.width, canvas.height);
+	gl.enable(gl.DEPTH_TEST);
+
+
+	_resourceManager = new ResourceManager(gl);
+	_resourceManager.onload = () => { render(canvas, gl); }
+	_resourceManager.loadResources();
+
+}
+
+function render(canvas, gl) {
+
 	let aspect = canvas.width / canvas.height;			
 	let shaderProgram = createShaderProgram(gl, FSHADER_SOURCE, VSHADER_SOURCE);	
 	
 	gl.useProgram(shaderProgram);
 	gl.shaderProgram = shaderProgram;	
 	
-	let model = CreateCube();
+	let model = CreateCube(_resourceManager.getTexture('brick.JPG'));
 	model.init(gl);
 	
 	let vpMatrix = getViewPorjectionMatrix(aspect);
 		
-	initLightAttributes(gl);		
-	gl_Init(canvas);	
+	initLightAttributes(gl);
 
 	(function animloop(){		
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -210,6 +239,13 @@ window.onload = function(){
 		}
 		requestAnimFrame(animloop);		
 	})();
+
+}
+
+
+
+window.onload = function(){
+	start();
 }
 
 

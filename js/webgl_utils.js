@@ -18,7 +18,7 @@ function initWebGL(canvas) {
 
 function createShader(gl, type, shaderSource) {
   
-	var shader = gl.createShader(type);
+	let shader = gl.createShader(type);
 
 	if (shader == null) {
 		console.log('unable to create shader');
@@ -28,9 +28,9 @@ function createShader(gl, type, shaderSource) {
 	gl.shaderSource(shader, shaderSource);
 	gl.compileShader(shader); 
 
-	var compiled = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
+	let compiled = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
 	if (!compiled) {
-		var error = gl.getShaderInfoLog(shader);
+		let error = gl.getShaderInfoLog(shader);
 		console.log('Failed to compile shader: ' + error);
 		gl.deleteShader(shader);
 		return null;
@@ -41,8 +41,8 @@ function createShader(gl, type, shaderSource) {
 
 function createShaderProgram(gl, fshader, vshader ) {
 		 
-	var vertexShader = createShader(gl, gl.FRAGMENT_SHADER, fshader);
-	var fragmentShader = createShader(gl, gl.VERTEX_SHADER, vshader);
+	let vertexShader = createShader(gl, gl.FRAGMENT_SHADER, fshader);
+	let fragmentShader = createShader(gl, gl.VERTEX_SHADER, vshader);
 
 	if (!vertexShader || !fragmentShader) {
 		return null;
@@ -59,9 +59,9 @@ function createShaderProgram(gl, fshader, vshader ) {
 	gl.linkProgram(shaderProgram);
 
 	
-	var linked = gl.getProgramParameter(shaderProgram, gl.LINK_STATUS);
+	let linked = gl.getProgramParameter(shaderProgram, gl.LINK_STATUS);
 	if (!linked) {
-		var error = gl.getProgramInfoLog(shaderProgram);
+		let error = gl.getProgramInfoLog(shaderProgram);
 		console.log('Failed to link shaderProgram: ' + error);
 		gl.deleteProgram(shaderProgram);
 		gl.deleteShader(fragmentShader);
@@ -79,13 +79,13 @@ function createShaderProgram(gl, fshader, vshader ) {
 
 function initArrayBuffer(gl, data, num, type, attribName) {
 	
-	var buffer = gl.createBuffer();
+	let buffer = gl.createBuffer();
 	
 	gl.bindBuffer(gl.ARRAY_BUFFER, buffer);	
 	gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);	
 	
 	
-	var attrib = getAttribIndex(gl, attribName);
+	let attrib = getAttribIndex(gl, attribName);
 	gl.vertexAttribPointer(attrib, num, type, false, 0, 0);
 	gl.enableVertexAttribArray(attrib);	
 	
@@ -94,7 +94,7 @@ function initArrayBuffer(gl, data, num, type, attribName) {
 
 
 function getAttribIndex(gl, attributeName) {
-	var attr = gl.getAttribLocation(gl.shaderProgram, attributeName);
+	let attr = gl.getAttribLocation(gl.shaderProgram, attributeName);
 
 	if (attr == -1) {
 		console.log('Attribute "' + attributeName + '" not found.');
