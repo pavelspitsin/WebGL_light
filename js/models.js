@@ -54,7 +54,7 @@ class Mesh {
             initArrayBuffer(gl, new Float32Array(this.texCoords), 2, gl.FLOAT, "a_TexCoord");	
                 
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint8Array(this.indices), gl.STATIC_DRAW);		
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(this.indices), gl.STATIC_DRAW);		
             
         gl.bindBuffer(gl.ARRAY_BUFFER, null);
         gl.bindVertexArray(null);

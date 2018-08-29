@@ -164,7 +164,7 @@ function drawModel(gl, model, vpMatrix) {
 	let vao = mesh.vao;
 
 	gl.bindVertexArray(vao);
-	gl.drawElements(gl.TRIANGLES, mesh.indices.length, gl.UNSIGNED_BYTE, 0);
+	gl.drawElements(gl.TRIANGLES, mesh.indices.length, gl.UNSIGNED_SHORT, 0);
 	gl.bindVertexArray(null);
 
 }
