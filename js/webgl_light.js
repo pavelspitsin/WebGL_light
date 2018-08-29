@@ -1,44 +1,5 @@
 'use strict';
 
-//const VSHADER_SOURCE = `
-//
-//	attribute vec4 a_Color;
-//	attribute vec4 a_Position;
-//	attribute vec4 a_Normal;
-//
-//	uniform vec3 u_lightPosition;
-//	uniform vec3 u_ambientColor;
-//	uniform vec4 u_lightColor;
-//	uniform mat4 u_MVPMatrix;
-//	uniform mat4 u_NormalMatrix;
-//	uniform mat4 u_ModelMatrix;
-//
-//	varying vec4 v_Color;
-//
-//	void main() {
-//
-//		gl_Position = u_MVPMatrix * a_Position;
-//
-//		vec3 position = vec3(u_ModelMatrix * a_Position);		
-//		vec3 lightDir = normalize(u_lightPosition - position);	
-//		vec3 normal = normalize(vec3(u_NormalMatrix * a_Normal));
-//		float nDotL = max(dot(normal, lightDir), 0.0);
-//		vec3 ambient = u_ambientColor * a_Color.rgb;
-//		vec3 diffuse = u_lightColor.rgb * nDotL * a_Color.rgb;
-//		v_Color = vec4(diffuse + ambient, a_Color.a);
-//		// v_Color = a_Color;
-//	}
-//`;
-//
-//const FSHADER_SOURCE =  `
-//	precision mediump float;
-//	varying vec4 v_Color;
-//	void main() {
-//		gl_FragColor =  v_Color;
-//	}
-//`;
-
-
 
 const VSHADER_SOURCE = `
 
@@ -50,6 +11,7 @@ const VSHADER_SOURCE = `
 	uniform mat4 u_MVPMatrix;
 	uniform mat4 u_NormalMatrix;
 	uniform mat4 u_ModelMatrix;
+	uniform bool u_isUseTexture;
 
 	varying vec4 v_Color;
 	varying vec3 v_Position;
@@ -61,10 +23,13 @@ const VSHADER_SOURCE = `
 		gl_Position = u_MVPMatrix * a_Position;
 		v_Position = vec3(u_ModelMatrix * a_Position);	
 		v_Normal = normalize(vec3(u_NormalMatrix * a_Normal));
-		v_Color = a_Color;
-		v_TexCoord = a_TexCoord;
+		v_Color = vec4(1.0, 1.0, 1.0, 1.0);
+		if (u_isUseTexture) {
+			v_TexCoord = a_TexCoord;
+		}
 	}
 `;
+
 
 const FSHADER_SOURCE =  `
 	precision mediump float;
@@ -73,6 +38,7 @@ const FSHADER_SOURCE =  `
 	uniform vec4 u_lightColor;
 	uniform vec3 u_lightPosition;
 	uniform vec3 u_ambientColor;
+	uniform bool u_isUseTexture;
 
 	varying vec4 v_Color;
 	varying vec3 v_Position;
@@ -87,7 +53,11 @@ const FSHADER_SOURCE =  `
 		vec3 ambient = u_ambientColor * v_Color.rgb;
 		vec3 diffuse = u_lightColor.rgb * nDotL * v_Color.rgb;
 		vec4 color =  vec4(diffuse + ambient, v_Color.a);
-		color *= texture2D(u_Sampler, v_TexCoord);
+
+		if (u_isUseTexture) {
+			color *= texture2D(u_Sampler, v_TexCoord);
+		}
+
 		gl_FragColor = color;
 	}
 `;
@@ -131,7 +101,7 @@ function getViewPorjectionMatrix(aspect) {
 	mat4.perspective(projMat, 45.0 * Math.PI / 180, aspect, 0.1, 100);	
 		
 	let viewMat = mat4.create(); 		
-	mat4.lookAt(viewMat, [3.0, 3.0, 7.0], [0.0, 0.0, 0.0], [0.0, 1.0, 0.0]);
+	mat4.lookAt(viewMat, [10.0, 10.0, 10.0], [0.0, 0.0, 0.0], [0.0, 1.0, 0.0]);
 		
 	let mvMatrix = mat4.create();
 	mat4.multiply(mvMatrix, projMat, viewMat);
@@ -172,13 +142,21 @@ function drawModel(gl, model, vpMatrix) {
 	gl.uniformMatrix4fv(u_mvpMatrix, false, mvpMatrix);
 
 
+	
+	var u_isUseTexture = gl.getUniformLocation(gl.shaderProgram, "u_isUseTexture");
+
 	if (mesh.isUseTexture) {
+
+		gl.uniform1i(u_isUseTexture, 1);
 
 		var u_Sampler = gl.getUniformLocation(gl.shaderProgram, "u_Sampler");
 		gl.uniform1i(u_Sampler, 0);
 
 		gl.activeTexture(gl.TEXTURE0);
 		gl.bindTexture(gl.TEXTURE_2D, mesh.texture.object);
+	}
+	else {
+		gl.uniform1i(u_isUseTexture, 0);
 	}
 
 
@@ -222,8 +200,14 @@ function render(canvas, gl) {
 	gl.useProgram(shaderProgram);
 	gl.shaderProgram = shaderProgram;	
 	
-	let model = CreateCube(_resourceManager.getTexture('brick.JPG'));
+
+	let objLoader = new ObjLoader();
+	
+	let model = objLoader.load();
 	model.init(gl);
+
+	//let model = CreateCube(_resourceManager.getTexture('brick.JPG'));
+	//model.init(gl);
 	
 	let vpMatrix = getViewPorjectionMatrix(aspect);
 		
@@ -246,6 +230,11 @@ function render(canvas, gl) {
 
 window.onload = function(){
 	start();
+
+	//let objLoader = new ObjLoader();
+	//let model = objLoader.load();
+	//let cubeModel = CreateCube(null);
+	//console.log(1);
 }
 
 
