@@ -5,6 +5,10 @@ const TEXTURES_RESOURCES = [
     'brick_norm.JPG'
 ];
 
+const MODELS_RESOURCES = [
+    'monkey.obj',
+]
+
 
 class Texture {
 
@@ -23,7 +27,8 @@ class ResourceManager {
     constructor(gl) {
         this.gl = gl;
         this.textures = {};
-        this.resourcesLength = TEXTURES_RESOURCES.length;
+        this.models = {};
+        this.resourcesLength = TEXTURES_RESOURCES.length + MODELS_RESOURCES.length;
         this.onload = null;
         this.isLoaded = false;
     }
@@ -43,6 +48,10 @@ class ResourceManager {
             for(let i = 0; i < TEXTURES_RESOURCES.length; ++i) {
                 this.loadImage(TEXTURES_RESOURCES[i], this.textures);
             }
+    
+            for(let i = 0; i < MODELS_RESOURCES.length; ++i) {
+                this.loadModel(MODELS_RESOURCES[i], this.models);
+            }
         }
     }
 
@@ -56,6 +65,29 @@ class ResourceManager {
             }
         }
     }
+
+
+    loadModel(path, models) {
+
+        let xhr = new XMLHttpRequest();
+
+        xhr.onreadystatechange = () => {
+            if (xhr.readyState === 4 && xhr.status !== 404) {
+
+                let objLoader = new ObjLoader();
+                let loadedModel = objLoader.load(xhr.responseText);
+
+                models[path] = loadedModel;
+                this.recourceLoaded();
+            }
+          }
+
+
+        xhr.open('GET', './resources/Models/' + path, true);
+        xhr.send();
+
+    }
+
 
     loadImage(path, textures) {
         let image = new Image();
@@ -84,7 +116,7 @@ class ResourceManager {
             this.recourceLoaded();
         };
 
-        image.src = './resources/' + path;
+        image.src = './resources/Textures/' + path;
     }
 
 }

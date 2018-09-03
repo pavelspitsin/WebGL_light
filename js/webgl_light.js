@@ -68,6 +68,7 @@ const ROTATE = true;
 const LIGHT_COLOR = [1.0, 1.0, 1.0, 1.0];
 const AMBIENT_COLOR = [0.2, 0.2, 0.2];
 const LIGHT_POSITION = [2.0, 2.0, 2.0];
+const CAMERA_POSITION = [5.0, 2.0, 5.0];
 
 
 let _angle = 0;
@@ -101,7 +102,7 @@ function getViewPorjectionMatrix(aspect) {
 	mat4.perspective(projMat, 45.0 * Math.PI / 180, aspect, 0.1, 100);	
 		
 	let viewMat = mat4.create(); 		
-	mat4.lookAt(viewMat, [10.0, 10.0, 10.0], [0.0, 0.0, 0.0], [0.0, 1.0, 0.0]);
+	mat4.lookAt(viewMat, CAMERA_POSITION, [0.0, 0.0, 0.0], [0.0, 1.0, 0.0]);
 		
 	let mvMatrix = mat4.create();
 	mat4.multiply(mvMatrix, projMat, viewMat);
@@ -200,14 +201,8 @@ function render(canvas, gl) {
 	gl.useProgram(shaderProgram);
 	gl.shaderProgram = shaderProgram;	
 	
-
-	let objLoader = new ObjLoader();
-	
-	let model = objLoader.load();
+	let model = _resourceManager.models['monkey.obj'];
 	model.init(gl);
-
-	//let model = CreateCube(_resourceManager.getTexture('brick.JPG'));
-	//model.init(gl);
 	
 	let vpMatrix = getViewPorjectionMatrix(aspect);
 		
@@ -230,11 +225,6 @@ function render(canvas, gl) {
 
 window.onload = function(){
 	start();
-
-	//let objLoader = new ObjLoader();
-	//let model = objLoader.load();
-	//let cubeModel = CreateCube(null);
-	//console.log(1);
 }
 
 
