@@ -1,12 +1,22 @@
 'use strict';
 
 const TEXTURES_RESOURCES = [
+
+    'arm_dif.png', 
+    'body_dif.png', 
+    'glass_dif.png', 
+    'hand_dif.png', 
+    'helmet_diff.png', 
+    'leg_dif.png',
+
     'brick.JPG', 
     'brick_norm.JPG'
 ];
 
 const MODELS_RESOURCES = [
-    'monkey.obj',
+    //'monkey.obj',
+    //'cubs.obj',
+    'nanosuit.obj'
 ]
 
 
@@ -69,23 +79,13 @@ class ResourceManager {
 
     loadModel(path, models) {
 
-        let xhr = new XMLHttpRequest();
 
-        xhr.onreadystatechange = () => {
-            if (xhr.readyState === 4 && xhr.status !== 404) {
+        let objLoader = new ObjLoader();
 
-                let objLoader = new ObjLoader();
-                let loadedModel = objLoader.load(xhr.responseText);
-
-                models[path] = loadedModel;
-                this.recourceLoaded();
-            }
-          }
-
-
-        xhr.open('GET', './resources/Models/' + path, true);
-        xhr.send();
-
+        objLoader.load(path, (model) => {
+            models[path] = model;
+            this.recourceLoaded();
+        });
     }
 
 

@@ -1,32 +1,71 @@
 'use strict';
 
 
+class Material {
+
+    constructor() {
+        this.name = null;
+
+        this.ambientColor = vec3.clone([0.0,0.0,0.0]);
+        this.diffuseColor = vec3.clone([1.0,1.0,1.0]);
+
+        this.ambientTexture = null;
+        this.diffuseTexture = null;
+
+    }
+
+    create(ambientColor, diffuseColor, ambientTexture, diffuseTexture) {
+
+        let material = new Material();
+
+        material.ambientColor = (ambientColor == null || ambientColor == undefined) ? vec3.clone([0.0,0.0,0.0]) : ambientColor;
+        material.diffuseColor = (ambientColor == null || ambientColor == undefined) ? vec3.clone([1.0,1.0,1.0]) : diffuseColor;
+
+        material.ambientTexture = (ambientColor == null || ambientColor == undefined) ? null : ambientTexture;
+        material.diffuseTexture = (ambientColor == null || ambientColor == undefined) ? null : diffuseTexture;
+    }
+
+}
+
 class Model {
 
-
-    constructor(mesh, position, rotation, scale) {
-        this.mesh = mesh;
+    constructor(meshes, position, rotation, scale) {
+        this.meshes = meshes;
+        this.materials = null;
         this.position = (position == null || position == undefined) ? vec3.create() : position;
         this.rotation = (rotation == null || rotation == undefined) ? vec3.create() : rotation;
         this.scale = (scale == null || scale == undefined) ? vec3.clone([1,1,1]) : scale;
     }
 
     init(gl) {
-        this.mesh.init(gl);
+        for (let i = 0; i < this.meshes.length; ++i) {
+            this.meshes[i].init(gl);
+        }
     }
 }
 
 
 class Mesh {
-    constructor(vertices, normals, /*colors,*/ indices, texture, texCoords) {
-        this.vertices = new Float32Array(vertices);
-        this.normals = new Float32Array(normals);
-        //this.colors = new Float32Array(colors);
-        this.indices = new Float32Array(indices);
-        this.texture = texture;
-        this.texCoords = new Float32Array(texCoords);
+
+    constructor() {
+        this.vertices = [];
+        this.normals = [];
+        this.indices = [];
+        this.materialName = null;
+        this.texCoords = [];
         this.initialized = false;
         this.vao = null;
+    }
+
+    static create(vertices, normals, indices, texCoords) {
+
+        let mesh = new Mesh();
+        mesh.vertices = vertices;
+        mesh.normals = normals;
+        mesh.indices = indices;
+        mesh.texCoords = texCoords;
+
+        return mesh;
     }
 
     init(gl) {
@@ -36,8 +75,7 @@ class Mesh {
     }
 
     get isUseTexture() {
-        return this.texture != null && this.texture != undefined && 
-                this.texCoords != null && this.texCoords != undefined;
+        return this.texCoords != null && this.texCoords != undefined;
       }
 
     createBuffers(gl) {
@@ -48,7 +86,6 @@ class Mesh {
         gl.bindVertexArray(vao);
         initArrayBuffer(gl, new Float32Array(this.vertices), 3, gl.FLOAT, "a_Position");
         initArrayBuffer(gl, new Float32Array(this.normals), 3, gl.FLOAT, "a_Normal");
-        //initArrayBuffer(gl, new Float32Array(this.colors), 3, gl.FLOAT, "a_Color");	
 
         if (this.isUseTexture)
             initArrayBuffer(gl, new Float32Array(this.texCoords), 2, gl.FLOAT, "a_TexCoord");	
@@ -68,11 +105,14 @@ class Mesh {
 function CreateCube(texture) {
 
     let mesh = CreateCubeMesh(texture);
+    let meshes = [];
+    meshes.push(mesh);
+
     let position = vec3.create();
     let rotation = vec3.create();
     let scale = vec3.clone([1,1,1]);
 
-    return new Model(mesh, position, rotation, scale);
+    return new Model(meshes, position, rotation, scale);
 }
 
 
@@ -123,5 +163,5 @@ function CreateCubeMesh(texture) {
        20,21,22,  20,22,23     // back
     ];
 
-    return new Mesh(vertices, normals, indices, texture, texCoords);
+    return Mesh.create(vertices, normals, indices, texCoords);
 }

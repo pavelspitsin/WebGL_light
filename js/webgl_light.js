@@ -67,8 +67,9 @@ const ROTATE = true;
 
 const LIGHT_COLOR = [1.0, 1.0, 1.0, 1.0];
 const AMBIENT_COLOR = [0.2, 0.2, 0.2];
-const LIGHT_POSITION = [2.0, 2.0, 2.0];
-const CAMERA_POSITION = [5.0, 2.0, 5.0];
+const LIGHT_POSITION = [10.0, 10.0, 10.0];
+const CAMERA_POSITION = [5.0, 20.0, 15.0];
+const CAMERA_LOOK_AT = [0.0, 8.0, 0.0];
 
 
 let _angle = 0;
@@ -102,7 +103,7 @@ function getViewPorjectionMatrix(aspect) {
 	mat4.perspective(projMat, 45.0 * Math.PI / 180, aspect, 0.1, 100);	
 		
 	let viewMat = mat4.create(); 		
-	mat4.lookAt(viewMat, CAMERA_POSITION, [0.0, 0.0, 0.0], [0.0, 1.0, 0.0]);
+	mat4.lookAt(viewMat, CAMERA_POSITION, CAMERA_LOOK_AT, [0.0, 1.0, 0.0]);
 		
 	let mvMatrix = mat4.create();
 	mat4.multiply(mvMatrix, projMat, viewMat);
@@ -113,7 +114,10 @@ function getViewPorjectionMatrix(aspect) {
 
 function drawModel(gl, model, vpMatrix) {
 	
-	let mesh = model.mesh;
+	let meshes = model.meshes;
+
+	if (meshes == null || meshes.length == 0)
+		return;
 
 	// Model matrix
 	let modelMatrix = mat4.create();	
@@ -143,31 +147,37 @@ function drawModel(gl, model, vpMatrix) {
 	gl.uniformMatrix4fv(u_mvpMatrix, false, mvpMatrix);
 
 
+	for(let i = 0; i < meshes.length; ++i) {
+
+		let mesh = meshes[i];
+		let material = model.materials[mesh.materialName];
+		let texture = _resourceManager.getTexture(material.diffuseTexture);
+
+		var u_isUseTexture = gl.getUniformLocation(gl.shaderProgram, "u_isUseTexture");
+
+		if (mesh.isUseTexture && texture) {
 	
-	var u_isUseTexture = gl.getUniformLocation(gl.shaderProgram, "u_isUseTexture");
+			gl.uniform1i(u_isUseTexture, 1);
+	
+			var u_Sampler = gl.getUniformLocation(gl.shaderProgram, "u_Sampler");
+			gl.uniform1i(u_Sampler, 0);
+	
+			gl.activeTexture(gl.TEXTURE0);
+			gl.bindTexture(gl.TEXTURE_2D, texture.object);
+		}
+		else {
+			gl.uniform1i(u_isUseTexture, 0);
+		}
+	
+	
+		// Draw mesh
+		let vao = mesh.vao;
+	
+		gl.bindVertexArray(vao);
+		gl.drawElements(gl.TRIANGLES, mesh.indices.length, gl.UNSIGNED_SHORT, 0);
+		gl.bindVertexArray(null);
 
-	if (mesh.isUseTexture) {
-
-		gl.uniform1i(u_isUseTexture, 1);
-
-		var u_Sampler = gl.getUniformLocation(gl.shaderProgram, "u_Sampler");
-		gl.uniform1i(u_Sampler, 0);
-
-		gl.activeTexture(gl.TEXTURE0);
-		gl.bindTexture(gl.TEXTURE_2D, mesh.texture.object);
 	}
-	else {
-		gl.uniform1i(u_isUseTexture, 0);
-	}
-
-
-	// Draw mesh
-	let vao = mesh.vao;
-
-	gl.bindVertexArray(vao);
-	gl.drawElements(gl.TRIANGLES, mesh.indices.length, gl.UNSIGNED_SHORT, 0);
-	gl.bindVertexArray(null);
-
 }
 
 
@@ -201,7 +211,7 @@ function render(canvas, gl) {
 	gl.useProgram(shaderProgram);
 	gl.shaderProgram = shaderProgram;	
 	
-	let model = _resourceManager.models['monkey.obj'];
+	let model = _resourceManager.models['nanosuit.obj'];
 	model.init(gl);
 	
 	let vpMatrix = getViewPorjectionMatrix(aspect);
