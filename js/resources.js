@@ -14,8 +14,8 @@ const TEXTURES_RESOURCES = [
 ];
 
 const MODELS_RESOURCES = [
-    //'monkey.obj',
-    //'cubs.obj',
+    'monkey.obj',
+    'cubs.obj',
     'nanosuit.obj'
 ]
 

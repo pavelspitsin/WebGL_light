@@ -3,17 +3,15 @@
 
 const VSHADER_SOURCE = `
 
-	attribute vec4 a_Color;
 	attribute vec4 a_Position;
 	attribute vec4 a_Normal;
 	attribute vec2 a_TexCoord;
-
+	
 	uniform mat4 u_MVPMatrix;
 	uniform mat4 u_NormalMatrix;
 	uniform mat4 u_ModelMatrix;
-	uniform bool u_isUseTexture;
+	uniform bool u_IsUseTexture;
 
-	varying vec4 v_Color;
 	varying vec3 v_Position;
 	varying vec3 v_Normal;
 	varying vec2 v_TexCoord;
@@ -23,8 +21,7 @@ const VSHADER_SOURCE = `
 		gl_Position = u_MVPMatrix * a_Position;
 		v_Position = vec3(u_ModelMatrix * a_Position);	
 		v_Normal = normalize(vec3(u_NormalMatrix * a_Normal));
-		v_Color = vec4(1.0, 1.0, 1.0, 1.0);
-		if (u_isUseTexture) {
+		if (u_IsUseTexture) {
 			v_TexCoord = a_TexCoord;
 		}
 	}
@@ -34,27 +31,31 @@ const VSHADER_SOURCE = `
 const FSHADER_SOURCE =  `
 	precision mediump float;
 
-	uniform sampler2D u_Sampler;
-	uniform vec4 u_lightColor;
-	uniform vec3 u_lightPosition;
-	uniform vec3 u_ambientColor;
-	uniform bool u_isUseTexture;
+	uniform float u_Alpha;
+	uniform vec3 u_DiffuseColor;
+	uniform vec3 u_AmbientColor;
 
-	varying vec4 v_Color;
+	uniform sampler2D u_Sampler;
+	uniform bool u_IsUseTexture;
+
+	uniform vec3 u_LightPosition;
+	uniform vec3 u_LightAmbientColor;
+	uniform vec4 u_LightDiffuseColor;
+
 	varying vec3 v_Position;
 	varying vec3 v_Normal;
 	varying vec2 v_TexCoord;
 
 	void main() {
 		
-		vec3 lightDir = normalize(u_lightPosition - v_Position);	
+		vec3 lightDir = normalize(u_LightPosition - v_Position);	
 		float nDotL = max(dot(v_Normal, lightDir), 0.0);
 		
-		vec3 ambient = u_ambientColor * v_Color.rgb;
-		vec3 diffuse = u_lightColor.rgb * nDotL * v_Color.rgb;
-		vec4 color =  vec4(diffuse + ambient, v_Color.a);
+		vec3 ambient = u_AmbientColor + u_LightAmbientColor;
+		vec3 diffuse = u_DiffuseColor * u_LightDiffuseColor.rgb * nDotL;
+		vec4 color =  vec4(diffuse + ambient, u_Alpha);
 
-		if (u_isUseTexture) {
+		if (u_IsUseTexture) {
 			color *= texture2D(u_Sampler, v_TexCoord);
 		}
 
@@ -68,7 +69,7 @@ const ROTATE = true;
 const LIGHT_COLOR = [1.0, 1.0, 1.0, 1.0];
 const AMBIENT_COLOR = [0.2, 0.2, 0.2];
 const LIGHT_POSITION = [10.0, 10.0, 10.0];
-const CAMERA_POSITION = [5.0, 20.0, 15.0];
+const CAMERA_POSITION = [5.0, 14.0, 19.0];
 const CAMERA_LOOK_AT = [0.0, 8.0, 0.0];
 
 
@@ -86,13 +87,13 @@ function angleChange(deltaTime) {
 
 function initLightAttributes(gl) {
 
-	let u_ambientColor = gl.getUniformLocation(gl.shaderProgram, "u_ambientColor");
+	let u_ambientColor = gl.getUniformLocation(gl.shaderProgram, "u_LightAmbientColor");
 	gl.uniform3fv(u_ambientColor, new Float32Array(AMBIENT_COLOR));
 
-	let u_lightColor = gl.getUniformLocation(gl.shaderProgram, "u_lightColor");
-	gl.uniform4fv(u_lightColor, new Float32Array(LIGHT_COLOR));
+	let u_LightDiffuseColor = gl.getUniformLocation(gl.shaderProgram, "u_LightDiffuseColor");
+	gl.uniform4fv(u_LightDiffuseColor, new Float32Array(LIGHT_COLOR));
 		
-	let u_lightPosition = gl.getUniformLocation(gl.shaderProgram, "u_lightPosition");
+	let u_lightPosition = gl.getUniformLocation(gl.shaderProgram, "u_LightPosition");
 	gl.uniform3fv(u_lightPosition, new Float32Array(LIGHT_POSITION));
 }
   
@@ -153,11 +154,19 @@ function drawModel(gl, model, vpMatrix) {
 		let material = model.materials[mesh.materialName];
 		let texture = _resourceManager.getTexture(material.diffuseTexture);
 
-		var u_isUseTexture = gl.getUniformLocation(gl.shaderProgram, "u_isUseTexture");
+		var u_Alpha = gl.getUniformLocation(gl.shaderProgram, "u_Alpha");
+		var u_DiffuseColor = gl.getUniformLocation(gl.shaderProgram, "u_DiffuseColor");
+		var u_AmbientColor = gl.getUniformLocation(gl.shaderProgram, "u_AmbientColor");
+
+		gl.uniform1f(u_Alpha, material.alpha);
+		gl.uniform3fv(u_DiffuseColor, material.diffuseColor);
+		gl.uniform3fv(u_AmbientColor, material.ambientColor);
+
 
 		if (mesh.isUseTexture && texture) {
 	
-			gl.uniform1i(u_isUseTexture, 1);
+			var u_IsUseTexture = gl.getUniformLocation(gl.shaderProgram, "u_IsUseTexture");
+			gl.uniform1i(u_IsUseTexture, 1);
 	
 			var u_Sampler = gl.getUniformLocation(gl.shaderProgram, "u_Sampler");
 			gl.uniform1i(u_Sampler, 0);
@@ -166,7 +175,7 @@ function drawModel(gl, model, vpMatrix) {
 			gl.bindTexture(gl.TEXTURE_2D, texture.object);
 		}
 		else {
-			gl.uniform1i(u_isUseTexture, 0);
+			gl.uniform1i(u_IsUseTexture, 0);
 		}
 	
 	

@@ -54,7 +54,7 @@ class MtlLoader {
 
                     materials[materialName] = currentMaterial;
                     break;
-                }
+                }                
 
                 case 'Ka':
                 {
@@ -65,7 +65,7 @@ class MtlLoader {
                         break;
                     }
 
-                    currentMaterial.ambientColor = vec3.clone(value);
+                    currentMaterial.ambientColor = new Float32Array(value);
                     break;
                 }
 
@@ -78,7 +78,18 @@ class MtlLoader {
                         break;
                     }
 
-                    currentMaterial.diffuseColor = vec3.clone(value);
+                    currentMaterial.diffuseColor = new Float32Array(value);
+                    break;
+                }
+
+                case 'd':                   
+                {
+                    if (words.length != 2) {                      
+                        console.log(`WARNING. Incorrect '${firstWord}' value in ${i} line.`);
+                        break;
+                    }
+
+                    currentMaterial.alpha = parseFloat(words[1]);
                     break;
                 }
 

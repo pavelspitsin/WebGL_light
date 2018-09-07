@@ -11,10 +11,11 @@ class Material {
 
         this.ambientTexture = null;
         this.diffuseTexture = null;
+        this.alpha = null;
 
     }
 
-    create(ambientColor, diffuseColor, ambientTexture, diffuseTexture) {
+    create(ambientColor, diffuseColor, ambientTexture, diffuseTexture, alpha) {
 
         let material = new Material();
 
@@ -23,6 +24,7 @@ class Material {
 
         material.ambientTexture = (ambientColor == null || ambientColor == undefined) ? null : ambientTexture;
         material.diffuseTexture = (ambientColor == null || ambientColor == undefined) ? null : diffuseTexture;
+        material.alpha = (ambientColor == null || ambientColor == undefined) ? null : 1.0;
     }
 
 }
@@ -57,13 +59,14 @@ class Mesh {
         this.vao = null;
     }
 
-    static create(vertices, normals, indices, texCoords) {
+    static create(vertices, normals, indices, texCoords, materialName) {
 
         let mesh = new Mesh();
         mesh.vertices = vertices;
         mesh.normals = normals;
         mesh.indices = indices;
         mesh.texCoords = texCoords;
+        mesh.materialName = materialName;
 
         return mesh;
     }
@@ -75,7 +78,7 @@ class Mesh {
     }
 
     get isUseTexture() {
-        return this.texCoords != null && this.texCoords != undefined;
+        return this.texCoords != null && this.texCoords != undefined && this.texCoords.length > 0 ;
       }
 
     createBuffers(gl) {
@@ -104,7 +107,7 @@ class Mesh {
 
 function CreateCube(texture) {
 
-    let mesh = CreateCubeMesh(texture);
+    let mesh = CreateCubeMesh("cube_material");
     let meshes = [];
     meshes.push(mesh);
 
@@ -112,11 +115,26 @@ function CreateCube(texture) {
     let rotation = vec3.create();
     let scale = vec3.clone([1,1,1]);
 
-    return new Model(meshes, position, rotation, scale);
+    
+    let material = new Material();
+    material.name = "cube_material";
+    material.ambientColor = new Float32Array([0.0,0.0,0.0]);
+    material.diffuseColor = new Float32Array([1.0,1.0,1.0]);
+
+    material.ambientTexture = null;
+    material.diffuseTexture = texture;
+    material.alpha = 1.0;
+
+
+    let model = new Model(meshes, position, rotation, scale);
+    model.materials = [];
+    model.materials[material.name] = material;
+
+    return model;
 }
 
 
-function CreateCubeMesh(texture) {
+function CreateCubeMesh(materialName) {
 
     //    v6----- v5
     //   /|      /|
@@ -163,5 +181,5 @@ function CreateCubeMesh(texture) {
        20,21,22,  20,22,23     // back
     ];
 
-    return Mesh.create(vertices, normals, indices, texCoords);
+    return Mesh.create(vertices, normals, indices, texCoords, materialName);
 }
