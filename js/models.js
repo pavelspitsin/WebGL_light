@@ -6,16 +6,36 @@ class Material {
     constructor() {
         this.name = null;
 
-        this.ambientColor = vec3.clone([0.0,0.0,0.0]);
+        this.ambientColor = vec3.clone([1.0,1.0,1.0]);
         this.diffuseColor = vec3.clone([1.0,1.0,1.0]);
 
         this.ambientTexture = null;
         this.diffuseTexture = null;
-        this.alpha = null;
+        this.alpha = 1.0;
 
     }
 
-    create(ambientColor, diffuseColor, ambientTexture, diffuseTexture, alpha) {
+    static createDefaultMaterials() {
+        let materials = [];
+        materials["default"] = this.createDefault();
+
+        return materials;
+    }
+
+    static createDefault() {
+        let material = new Material();
+        material.name = "default";
+        material.ambientColor = vec3.clone([1.0,1.0,1.0]);
+        material.diffuseColor = vec3.clone([1.0,1.0,1.0]);
+    
+        material.ambientTexture = null;
+        material.diffuseTexture = null;
+        material.alpha = 1.0;
+
+        return material;
+    }
+
+    static create(ambientColor, diffuseColor, ambientTexture, diffuseTexture, alpha) {
 
         let material = new Material();
 
@@ -25,6 +45,8 @@ class Material {
         material.ambientTexture = (ambientColor == null || ambientColor == undefined) ? null : ambientTexture;
         material.diffuseTexture = (ambientColor == null || ambientColor == undefined) ? null : diffuseTexture;
         material.alpha = (ambientColor == null || ambientColor == undefined) ? null : 1.0;
+
+        return material;
     }
 
 }
@@ -107,7 +129,10 @@ class Mesh {
 
 function CreateCube(texture) {
 
-    let mesh = CreateCubeMesh("cube_material");
+    let material = Material.createDefault();
+    material.diffuseTexture = texture;
+
+    let mesh = CreateCubeMesh(material.name);
     let meshes = [];
     meshes.push(mesh);
 
@@ -116,16 +141,6 @@ function CreateCube(texture) {
     let scale = vec3.clone([1,1,1]);
 
     
-    let material = new Material();
-    material.name = "cube_material";
-    material.ambientColor = new Float32Array([0.0,0.0,0.0]);
-    material.diffuseColor = new Float32Array([1.0,1.0,1.0]);
-
-    material.ambientTexture = null;
-    material.diffuseTexture = texture;
-    material.alpha = 1.0;
-
-
     let model = new Model(meshes, position, rotation, scale);
     model.materials = [];
     model.materials[material.name] = material;

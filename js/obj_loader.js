@@ -13,9 +13,23 @@ class ObjLoader {
             let objInfo = this.parseFile(fileContent);
             let model = new Model(objInfo.meshes);
 
-            this.mtlLoader.loadMaterials(objInfo.mtlib, model, () => {                
-                callback_objLoaded(model);
-            });
+            if (objInfo.mtlib != null) {
+                this.mtlLoader.loadMaterials(objInfo.mtlib, model, () => {  
+                    callback_objLoaded(model);
+                });      
+            }      
+            else {
+
+                let defaultMaterial = Material.createDefault();
+                model.materials = [];
+                model.materials[defaultMaterial.name] = defaultMaterial;      
+
+                model.meshes.forEach(function(mesh) {
+                    mesh.materialName = defaultMaterial.name;
+                  });
+
+                callback_objLoaded(model);  
+            }
 
         });
 

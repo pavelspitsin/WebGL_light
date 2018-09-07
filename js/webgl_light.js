@@ -51,7 +51,7 @@ const FSHADER_SOURCE =  `
 		vec3 lightDir = normalize(u_LightPosition - v_Position);	
 		float nDotL = max(dot(v_Normal, lightDir), 0.0);
 		
-		vec3 ambient = u_AmbientColor + u_LightAmbientColor;
+		vec3 ambient = u_AmbientColor * u_LightAmbientColor;
 		vec3 diffuse = u_DiffuseColor * u_LightDiffuseColor.rgb * nDotL;
 		vec4 color =  vec4(diffuse + ambient, u_Alpha);
 
@@ -220,7 +220,7 @@ function render(canvas, gl) {
 	gl.useProgram(shaderProgram);
 	gl.shaderProgram = shaderProgram;	
 	
-	let model = _resourceManager.models['nanosuit.obj'];
+	let model = _resourceManager.models['monkey.obj'];
 	model.init(gl);
 	
 	let vpMatrix = getViewPorjectionMatrix(aspect);

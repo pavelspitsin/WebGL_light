@@ -64,8 +64,8 @@ class MtlLoader {
                         console.log(`WARNING. Incorrect '${firstWord}' value in ${i} line.`);
                         break;
                     }
-
-                    currentMaterial.ambientColor = new Float32Array(value);
+                    
+                    currentMaterial.ambientColor = vec3.clone(value);
                     break;
                 }
 
@@ -78,7 +78,7 @@ class MtlLoader {
                         break;
                     }
 
-                    currentMaterial.diffuseColor = new Float32Array(value);
+                    currentMaterial.diffuseColor = vec3.clone(value);
                     break;
                 }
 
