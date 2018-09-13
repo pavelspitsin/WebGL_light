@@ -79,16 +79,22 @@ class ObjLoader {
             switch(firstWord) {
 
                 case 'v':
+                {
                     file.vertices.push(words.slice(1, words.length))
                     break;
+                }
                 case 'vt':
+                {
                     file.texCoords.push(words.slice(1, words.length))
                     break;
+                }
                 case 'vn':
+                {
                     file.normals.push(words.slice(1, words.length))
                     break;
-
+                }
                 case 'mtllib':
+                {
                     if (mtllib == null) {
                         mtllib = words[1];
                     }
@@ -97,9 +103,9 @@ class ObjLoader {
                     }
 
                     break;
-
+                }
                 case 'usemtl':
-
+                {
                     let material = words[1];
 
                     if (currentMesh.materialName != null) {
@@ -110,48 +116,65 @@ class ObjLoader {
                     
                     currentMesh.materialName = material;                    
                     break;
-
+                }
                 case 'f':
+                {
+                    let currentLineValue = words.slice(1, words.length);
 
-                    let faceVertices = words.slice(1, words.length);
+                    let faceVertices = currentLineValue.map( (item) => {
+                        return item.split('/');
+                    });
 
-                    let quad = false;
-                    let zeroVertexIndex = index;
 
-                    for(var j = 0; j < faceVertices.length; j++) {
+                    if (faceVertices.length >= 3) {
 
-                        if (j == 3 && !quad) {
-                            j = 2;
-                            quad = true;
+                        
+                        let triangleVertices = [];
+
+                        if (faceVertices.length == 3) {
+
+                            triangleVertices = faceVertices.slice();
+                        }
+                        else
+                        {
+                            // Split on triangles
+                            let firstVertex = faceVertices[0];
+
+                            for (let j = 2; j < faceVertices.length; ++j) {
+                                triangleVertices.push(firstVertex);
+                                triangleVertices.push(faceVertices[j-1]);
+                                triangleVertices.push(faceVertices[j]);
+                            }
                         }
 
-                        let vertex = faceVertices[j].split('/');
-                      
-                        currentMesh.vertices.push(file.vertices[vertex[0] - 1][0]);
-                        currentMesh.vertices.push(file.vertices[vertex[0] - 1][1]);
-                        currentMesh.vertices.push(file.vertices[vertex[0] - 1][2]);
+                        for (let j = 0; j < triangleVertices.length; ++j) {
 
-                        if (vertex.length == 3) {
-                            if (file.texCoords.length > 0) {
+                            let vertex = triangleVertices[j];
+
+                            currentMesh.vertices.push(file.vertices[vertex[0] - 1][0]);
+                            currentMesh.vertices.push(file.vertices[vertex[0] - 1][1]);
+                            currentMesh.vertices.push(file.vertices[vertex[0] - 1][2]);
+
+                            if (vertex[1].length > 0) {
                                 currentMesh.texCoords.push(file.texCoords[vertex[1] - 1][0]);
                                 currentMesh.texCoords.push(file.texCoords[vertex[1] - 1][1]);
                             }
 
+                            
                             currentMesh.normals.push(file.normals[vertex[2] - 1][0]);
                             currentMesh.normals.push(file.normals[vertex[2] - 1][1]);
                             currentMesh.normals.push(file.normals[vertex[2] - 1][2]);
+
+                            
+                            currentMesh.indices.push(index);
+                            index++;
                         }
 
-
-                        currentMesh.indices.push(index);
-                        index++;
-
-                        if (j == 3 && quad) {
-                            currentMesh.indices.push(zeroVertexIndex);
-                        }
-                    }                   
+                    }
+                                     
 
                     break;
+                }
                 default:
                     break;
             }
