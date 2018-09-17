@@ -10,7 +10,7 @@ const VSHADER_SOURCE = `
 	uniform mat4 u_MVPMatrix;
 	uniform mat4 u_NormalMatrix;
 	uniform mat4 u_ModelMatrix;
-	uniform bool u_IsUseTexture;
+	uniform bool u_IsUseDiffuseTexture;
 
 	varying vec3 v_Position;
 	varying vec3 v_Normal;
@@ -22,7 +22,7 @@ const VSHADER_SOURCE = `
 		v_Position = vec3(u_ModelMatrix * a_Position);	
 		v_Normal = normalize(vec3(u_NormalMatrix * a_Normal));
 		
-		if (u_IsUseTexture) {
+		if (u_IsUseDiffuseTexture) {
 			v_TexCoord = a_TexCoord;
 		}
 	}
@@ -32,20 +32,27 @@ const VSHADER_SOURCE = `
 const FSHADER_SOURCE =  `
 	precision mediump float;
 
-	uniform float u_Alpha;
-	uniform vec3 u_DiffuseColor;
-	uniform vec3 u_AmbientColor;
-	uniform vec3 u_SpecularColor;
-	uniform float u_SpecularExponent;
+	struct Material {
+		vec3 diffuseColor;
+		vec3 ambientColor;
+		vec3 specularColor;
+		float specularExponent;
+		float alpha;
+	};
 
-	uniform sampler2D u_Sampler;
-	uniform bool u_IsUseTexture;
+	struct Light {
+		vec3 position;
+		vec3 ambientColor;
+		vec3 diffuseColor;
+	};
+
+	uniform sampler2D u_DiffuseTexture;
+	uniform bool u_IsUseDiffuseTexture;
+
+	uniform Material u_Material;
+	uniform Light u_Light;
 
 	uniform vec3 u_ViewPosition;
-	uniform vec3 u_LightPosition;
-	uniform vec3 u_LightAmbientColor;
-	uniform vec4 u_LightDiffuseColor;
-
 
 	varying vec3 v_Position;
 	varying vec3 v_Normal;
@@ -53,21 +60,21 @@ const FSHADER_SOURCE =  `
 
 	void main() {
 		
-		vec3 lightDir = normalize(u_LightPosition - v_Position);	
+		vec3 lightDir = normalize(u_Light.position - v_Position);	
 		float nDotL = max(dot(v_Normal, lightDir), 0.0);
 		
-		vec3 ambient = u_DiffuseColor * u_AmbientColor * u_LightAmbientColor;
-		vec3 diffuse = u_DiffuseColor * u_LightDiffuseColor.rgb * nDotL;
+		vec3 ambient = u_Material.diffuseColor * u_Material.ambientColor * u_Light.ambientColor;
+		vec3 diffuse = u_Material.diffuseColor * u_Light.diffuseColor * nDotL;
 
 		vec3 viewDir = normalize(u_ViewPosition - v_Position);
 		vec3 reflectDir = normalize(reflect(-lightDir, v_Normal));
-		float spec = pow(max(dot(viewDir, reflectDir), 0.0), max(u_SpecularExponent, 1.0));
-		vec3 specular = spec * u_SpecularColor;
+		float spec = pow(max(dot(viewDir, reflectDir), 0.0), max(u_Material.specularExponent, 1.0));
+		vec3 specular = spec * u_Material.specularColor;
 
-		vec4 color =  vec4(ambient + diffuse + specular, u_Alpha);
+		vec4 color =  vec4(ambient + diffuse + specular, u_Material.alpha);
 
-		if (u_IsUseTexture) {
-			color *= texture2D(u_Sampler, v_TexCoord);
+		if (u_IsUseDiffuseTexture) {
+			color *= texture2D(u_DiffuseTexture, v_TexCoord);
 		}
 
 		gl_FragColor = color;
@@ -77,7 +84,7 @@ const FSHADER_SOURCE =  `
 
 const ROTATE = true;  
 
-const LIGHT_COLOR = [1.0, 1.0, 1.0, 0.0];
+const LIGHT_COLOR = [1.0, 1.0, 1.0];
 const AMBIENT_COLOR = [0.5, 0.5, 0.5];
 const LIGHT_POSITION = [5.0, 5.0, 10.0];
 
@@ -102,14 +109,14 @@ function angleChange(deltaTime) {
 
 function initLightAttributes(gl) {
 
-	let u_ambientColor = gl.getUniformLocation(gl.shaderProgram, "u_LightAmbientColor");
-	gl.uniform3fv(u_ambientColor, new Float32Array(AMBIENT_COLOR));
+	let u_Light_ambientColor = gl.getUniformLocation(gl.shaderProgram, "u_Light.ambientColor");
+	gl.uniform3fv(u_Light_ambientColor, new Float32Array(AMBIENT_COLOR));
 
-	let u_LightDiffuseColor = gl.getUniformLocation(gl.shaderProgram, "u_LightDiffuseColor");
-	gl.uniform4fv(u_LightDiffuseColor, new Float32Array(LIGHT_COLOR));
+	let u_Light_diffuseColor = gl.getUniformLocation(gl.shaderProgram, "u_Light.diffuseColor");
+	gl.uniform3fv(u_Light_diffuseColor, new Float32Array(LIGHT_COLOR));
 		
-	let u_lightPosition = gl.getUniformLocation(gl.shaderProgram, "u_LightPosition");
-	gl.uniform3fv(u_lightPosition, new Float32Array(LIGHT_POSITION));
+	let u_Light_position = gl.getUniformLocation(gl.shaderProgram, "u_Light.position");
+	gl.uniform3fv(u_Light_position, new Float32Array(LIGHT_POSITION));
 }
   
 
@@ -177,32 +184,32 @@ function drawModel(gl, model, vpMatrix) {
 		let material = model.materials[mesh.materialName];
 		let texture = _resourceManager.getTexture(material.diffuseTexture);
 
-		var u_Alpha = gl.getUniformLocation(gl.shaderProgram, "u_Alpha");
-		var u_DiffuseColor = gl.getUniformLocation(gl.shaderProgram, "u_DiffuseColor");
-		var u_AmbientColor = gl.getUniformLocation(gl.shaderProgram, "u_AmbientColor");
-		var u_SpecularColor = gl.getUniformLocation(gl.shaderProgram, "u_SpecularColor");
-		var u_SpecularExponent = gl.getUniformLocation(gl.shaderProgram, "u_SpecularExponent");
+		var u_Material_alpha = gl.getUniformLocation(gl.shaderProgram, "u_Material.alpha");
+		var u_Material_diffuseColor = gl.getUniformLocation(gl.shaderProgram, "u_Material.diffuseColor");
+		var u_Material_ambientColor = gl.getUniformLocation(gl.shaderProgram, "u_Material.ambientColor");
+		var u_Material_specularColor = gl.getUniformLocation(gl.shaderProgram, "u_Material.specularColor");
+		var u_Material_specularExponent = gl.getUniformLocation(gl.shaderProgram, "u_Material.specularExponent");
 
-		gl.uniform1f(u_Alpha, material.alpha);
-		gl.uniform3fv(u_DiffuseColor, material.diffuseColor);
-		gl.uniform3fv(u_AmbientColor, material.ambientColor);
-		gl.uniform3fv(u_SpecularColor, material.specularColor);
-		gl.uniform1f(u_SpecularExponent, material.specularExponent);
+		gl.uniform1f(u_Material_alpha, material.alpha);
+		gl.uniform3fv(u_Material_diffuseColor, material.diffuseColor);
+		gl.uniform3fv(u_Material_ambientColor, material.ambientColor);
+		gl.uniform3fv(u_Material_specularColor, material.specularColor);
+		gl.uniform1f(u_Material_specularExponent, material.specularExponent);
 
 
 		if (mesh.isUseTexture && texture) {
 	
-			var u_IsUseTexture = gl.getUniformLocation(gl.shaderProgram, "u_IsUseTexture");
-			gl.uniform1i(u_IsUseTexture, 1);
+			var u_IsUseDiffuseTexture = gl.getUniformLocation(gl.shaderProgram, "u_IsUseDiffuseTexture");
+			gl.uniform1i(u_IsUseDiffuseTexture, 1);
 	
-			var u_Sampler = gl.getUniformLocation(gl.shaderProgram, "u_Sampler");
-			gl.uniform1i(u_Sampler, 0);
+			var u_DiffuseTexture = gl.getUniformLocation(gl.shaderProgram, "u_DiffuseTexture");
+			gl.uniform1i(u_DiffuseTexture, 0);
 	
 			gl.activeTexture(gl.TEXTURE0);
 			gl.bindTexture(gl.TEXTURE_2D, texture.object);
 		}
 		else {
-			gl.uniform1i(u_IsUseTexture, 0);
+			gl.uniform1i(u_IsUseDiffuseTexture, 0);
 		}
 	
 	
