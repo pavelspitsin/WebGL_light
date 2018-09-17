@@ -21,6 +21,7 @@ const VSHADER_SOURCE = `
 		gl_Position = u_MVPMatrix * a_Position;
 		v_Position = vec3(u_ModelMatrix * a_Position);	
 		v_Normal = normalize(vec3(u_NormalMatrix * a_Normal));
+		
 		if (u_IsUseTexture) {
 			v_TexCoord = a_TexCoord;
 		}
@@ -34,13 +35,17 @@ const FSHADER_SOURCE =  `
 	uniform float u_Alpha;
 	uniform vec3 u_DiffuseColor;
 	uniform vec3 u_AmbientColor;
+	uniform vec3 u_SpecularColor;
+	uniform float u_SpecularExponent;
 
 	uniform sampler2D u_Sampler;
 	uniform bool u_IsUseTexture;
 
+	uniform vec3 u_ViewPosition;
 	uniform vec3 u_LightPosition;
 	uniform vec3 u_LightAmbientColor;
 	uniform vec4 u_LightDiffuseColor;
+
 
 	varying vec3 v_Position;
 	varying vec3 v_Normal;
@@ -51,9 +56,15 @@ const FSHADER_SOURCE =  `
 		vec3 lightDir = normalize(u_LightPosition - v_Position);	
 		float nDotL = max(dot(v_Normal, lightDir), 0.0);
 		
-		vec3 ambient = u_AmbientColor * u_LightAmbientColor;
+		vec3 ambient = u_DiffuseColor * u_AmbientColor * u_LightAmbientColor;
 		vec3 diffuse = u_DiffuseColor * u_LightDiffuseColor.rgb * nDotL;
-		vec4 color =  vec4(diffuse + ambient, u_Alpha);
+
+		vec3 viewDir = normalize(u_ViewPosition - v_Position);
+		vec3 reflectDir = normalize(reflect(-lightDir, v_Normal));
+		float spec = pow(max(dot(viewDir, reflectDir), 0.0), max(u_SpecularExponent, 1.0));
+		vec3 specular = spec * u_SpecularColor;
+
+		vec4 color =  vec4(ambient + diffuse + specular, u_Alpha);
 
 		if (u_IsUseTexture) {
 			color *= texture2D(u_Sampler, v_TexCoord);
@@ -66,11 +77,15 @@ const FSHADER_SOURCE =  `
 
 const ROTATE = true;  
 
-const LIGHT_COLOR = [1.0, 1.0, 1.0, 1.0];
-const AMBIENT_COLOR = [0.2, 0.2, 0.2];
-const LIGHT_POSITION = [10.0, 10.0, 10.0];
-const CAMERA_POSITION = [5.0, 14.0, 19.0];
-const CAMERA_LOOK_AT = [0.0, 8.0, 0.0];
+const LIGHT_COLOR = [1.0, 1.0, 1.0, 0.0];
+const AMBIENT_COLOR = [0.5, 0.5, 0.5];
+const LIGHT_POSITION = [5.0, 5.0, 10.0];
+
+//const CAMERA_POSITION = [5.0, 14.0, 19.0];
+//const CAMERA_LOOK_AT = [0.0, 8.0, 0.0];
+
+const CAMERA_POSITION = [0.0, 3.0, 5.0];
+const CAMERA_LOOK_AT = [0.0, 0.0, 0.0];
 
 
 let _angle = 0;
@@ -110,6 +125,14 @@ function getViewPorjectionMatrix(aspect) {
 	mat4.multiply(mvMatrix, projMat, viewMat);
 
 	return mvMatrix;
+}
+
+
+function setCameraAttributes(gl) {
+
+	let u_ViewPosition = gl.getUniformLocation(gl.shaderProgram, "u_ViewPosition");
+	gl.uniform3fv(u_ViewPosition, new Float32Array(CAMERA_POSITION));
+
 }
 
 
@@ -157,10 +180,14 @@ function drawModel(gl, model, vpMatrix) {
 		var u_Alpha = gl.getUniformLocation(gl.shaderProgram, "u_Alpha");
 		var u_DiffuseColor = gl.getUniformLocation(gl.shaderProgram, "u_DiffuseColor");
 		var u_AmbientColor = gl.getUniformLocation(gl.shaderProgram, "u_AmbientColor");
+		var u_SpecularColor = gl.getUniformLocation(gl.shaderProgram, "u_SpecularColor");
+		var u_SpecularExponent = gl.getUniformLocation(gl.shaderProgram, "u_SpecularExponent");
 
 		gl.uniform1f(u_Alpha, material.alpha);
 		gl.uniform3fv(u_DiffuseColor, material.diffuseColor);
 		gl.uniform3fv(u_AmbientColor, material.ambientColor);
+		gl.uniform3fv(u_SpecularColor, material.specularColor);
+		gl.uniform1f(u_SpecularExponent, material.specularExponent);
 
 
 		if (mesh.isUseTexture && texture) {
@@ -220,12 +247,13 @@ function render(canvas, gl) {
 	gl.useProgram(shaderProgram);
 	gl.shaderProgram = shaderProgram;	
 	
-	let model = _resourceManager.models['monkey.obj'];
+	let model =  _resourceManager.models['monkey.obj'];
 	model.init(gl);
 	
 	let vpMatrix = getViewPorjectionMatrix(aspect);
 		
 	initLightAttributes(gl);
+	setCameraAttributes(gl);
 
 	(function animloop(){		
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);

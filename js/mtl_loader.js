@@ -54,7 +54,18 @@ class MtlLoader {
 
                     materials[materialName] = currentMaterial;
                     break;
-                }                
+                }     
+
+                case 'Ns':
+                {
+                    if (words.length != 2) {                      
+                        console.log(`WARNING. Incorrect '${firstWord}' value in ${i} line.`);
+                        break;
+                    }
+
+                    currentMaterial.specularExponent = this.transformSpecularExponent(parseFloat(words[1]));
+                    break;
+                }  
 
                 case 'Ka':
                 {
@@ -82,6 +93,19 @@ class MtlLoader {
                     break;
                 }
 
+                case 'Ks':                   
+                {
+                    let value = words.slice(1, words.length);
+
+                    if (value.length != 3) {                        
+                        console.log(`WARNING. Incorrect '${firstWord}' value in ${i} line.`);
+                        break;
+                    }
+
+                    currentMaterial.specularColor = vec3.clone(value);
+                    break;
+                }
+
                 case 'd':                   
                 {
                     if (words.length != 2) {                      
@@ -103,7 +127,6 @@ class MtlLoader {
                     currentMaterial.ambientTexture = words[1];
                     break;
                 }
-
 
 
                 case 'map_Kd':
@@ -128,6 +151,9 @@ class MtlLoader {
     }
 
 
+    transformSpecularExponent(exponent) {
+        return exponent / 1000.0 * 128.0;
+    }
     
     //getMaterialNames(model) {
     //

@@ -8,6 +8,8 @@ class Material {
 
         this.ambientColor = vec3.clone([1.0,1.0,1.0]);
         this.diffuseColor = vec3.clone([1.0,1.0,1.0]);
+        this.specularColor = vec3.clone([0.0,0.0,0.0]);
+        this.specularExponent = 0.0;
 
         this.ambientTexture = null;
         this.diffuseTexture = null;
@@ -25,26 +27,21 @@ class Material {
     static createDefault() {
         let material = new Material();
         material.name = "default";
-        material.ambientColor = vec3.clone([1.0,1.0,1.0]);
-        material.diffuseColor = vec3.clone([1.0,1.0,1.0]);
-    
-        material.ambientTexture = null;
-        material.diffuseTexture = null;
-        material.alpha = 1.0;
 
         return material;
     }
 
-    static create(ambientColor, diffuseColor, ambientTexture, diffuseTexture, alpha) {
+    static create(ambientColor, diffuseColor, specularColor, specularExponent, ambientTexture, diffuseTexture, alpha) {
 
         let material = new Material();
 
-        material.ambientColor = (ambientColor == null || ambientColor == undefined) ? vec3.clone([0.0,0.0,0.0]) : ambientColor;
-        material.diffuseColor = (diffuseColor == null || diffuseColor == undefined) ? vec3.clone([1.0,1.0,1.0]) : diffuseColor;
+        material.ambientColor = (ambientColor == null || ambientColor == undefined) ? material.ambientColor : ambientColor;
+        material.diffuseColor = (diffuseColor == null || diffuseColor == undefined) ? material.diffuseColor : diffuseColor;
+        material.specularColor = (specularColor == null || specularColor == undefined) ? material.specularColor : diffuseColor;
 
-        material.ambientTexture = (ambientTexture == null || ambientTexture == undefined) ? null : ambientTexture;
-        material.diffuseTexture = (diffuseTexture == null || diffuseTexture == undefined) ? null : diffuseTexture;
-        material.alpha = (alpha == null || alpha == undefined) ? 1.0 : alpha;
+        material.ambientTexture = (ambientTexture == null || ambientTexture == undefined) ? material.ambientTexture : ambientTexture;
+        material.diffuseTexture = (diffuseTexture == null || diffuseTexture == undefined) ? material.diffuseTexture : diffuseTexture;
+        material.alpha = (alpha == null || alpha == undefined) ? material.alpha : alpha;
 
         return material;
     }
