@@ -40,11 +40,11 @@ class Material {
         let material = new Material();
 
         material.ambientColor = (ambientColor == null || ambientColor == undefined) ? vec3.clone([0.0,0.0,0.0]) : ambientColor;
-        material.diffuseColor = (ambientColor == null || ambientColor == undefined) ? vec3.clone([1.0,1.0,1.0]) : diffuseColor;
+        material.diffuseColor = (diffuseColor == null || diffuseColor == undefined) ? vec3.clone([1.0,1.0,1.0]) : diffuseColor;
 
-        material.ambientTexture = (ambientColor == null || ambientColor == undefined) ? null : ambientTexture;
-        material.diffuseTexture = (ambientColor == null || ambientColor == undefined) ? null : diffuseTexture;
-        material.alpha = (ambientColor == null || ambientColor == undefined) ? null : 1.0;
+        material.ambientTexture = (ambientTexture == null || ambientTexture == undefined) ? null : ambientTexture;
+        material.diffuseTexture = (diffuseTexture == null || diffuseTexture == undefined) ? null : diffuseTexture;
+        material.alpha = (alpha == null || alpha == undefined) ? 1.0 : alpha;
 
         return material;
     }
