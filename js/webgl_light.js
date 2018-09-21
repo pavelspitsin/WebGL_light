@@ -6,6 +6,7 @@ const VSHADER_SOURCE = `
 	attribute vec4 a_Position;
 	attribute vec4 a_Normal;
 	attribute vec2 a_TexCoord;
+	attribute vec3 a_Tangent;
 	
 	uniform mat4 u_MVPMatrix;
 	uniform mat4 u_NormalMatrix;
@@ -15,16 +16,25 @@ const VSHADER_SOURCE = `
 	varying vec3 v_Position;
 	varying vec3 v_Normal;
 	varying vec2 v_TexCoord;
+	varying mat3 v_TBN;
 	
 	void main() {
 
 		gl_Position = u_MVPMatrix * a_Position;
 		v_Position = vec3(u_ModelMatrix * a_Position);	
 		v_Normal = normalize(vec3(u_NormalMatrix * a_Normal));
-		
+
+			
 		if (u_IsUseDiffuseTexture) {
 			v_TexCoord = a_TexCoord;
 		}
+
+		vec3 T = normalize(vec3(u_ModelMatrix * vec4(a_Tangent,   0.0)));
+		vec3 N = normalize(vec3(u_ModelMatrix * a_Normal));
+		T = normalize(T - dot(T, N) * N);
+		vec3 B = cross(N, T);
+
+		v_TBN = mat3(T, B, N);
 	}
 `;
 
@@ -48,26 +58,36 @@ const FSHADER_SOURCE =  `
 
 	uniform sampler2D u_DiffuseTexture;
 	uniform bool u_IsUseDiffuseTexture;
+	uniform sampler2D u_NormalTexture;
+	uniform bool u_IsUseNormalTexture;
 
 	uniform Material u_Material;
 	uniform Light u_Light;
-
 	uniform vec3 u_ViewPosition;
 
 	varying vec3 v_Position;
 	varying vec3 v_Normal;
 	varying vec2 v_TexCoord;
+	varying mat3 v_TBN;
 
 	void main() {
 		
+		vec3 normal = v_Normal;
+
+		if (u_IsUseNormalTexture) {
+			normal = texture2D(u_NormalTexture, v_TexCoord).rgb;
+			normal = normalize(normal * 2.0 - 1.0);
+			normal = normalize(v_TBN * normal);
+		}
+
 		vec3 lightDir = normalize(u_Light.position - v_Position);	
-		float nDotL = max(dot(v_Normal, lightDir), 0.0);
+		float nDotL = max(dot(normal, lightDir), 0.0);
 		
 		vec3 ambient = u_Material.diffuseColor * u_Material.ambientColor * u_Light.ambientColor;
 		vec3 diffuse = u_Material.diffuseColor * u_Light.diffuseColor * nDotL;
 
 		vec3 viewDir = normalize(u_ViewPosition - v_Position);
-		vec3 reflectDir = normalize(reflect(-lightDir, v_Normal));
+		vec3 reflectDir = normalize(reflect(-lightDir, normal));
 		float spec = pow(max(dot(viewDir, reflectDir), 0.0), max(u_Material.specularExponent, 1.0));
 		vec3 specular = spec * u_Material.specularColor;
 
@@ -183,6 +203,7 @@ function drawModel(gl, model, vpMatrix) {
 		let mesh = meshes[i];
 		let material = model.materials[mesh.materialName];
 		let texture = _resourceManager.getTexture(material.diffuseTexture);
+		let normalTexture = _resourceManager.getTexture(material.normalTexture);
 
 		var u_Material_alpha = gl.getUniformLocation(gl.shaderProgram, "u_Material.alpha");
 		var u_Material_diffuseColor = gl.getUniformLocation(gl.shaderProgram, "u_Material.diffuseColor");
@@ -197,9 +218,10 @@ function drawModel(gl, model, vpMatrix) {
 		gl.uniform1f(u_Material_specularExponent, material.specularExponent);
 
 
+		var u_IsUseDiffuseTexture = gl.getUniformLocation(gl.shaderProgram, "u_IsUseDiffuseTexture");
+
 		if (mesh.isUseTexture && texture) {
 	
-			var u_IsUseDiffuseTexture = gl.getUniformLocation(gl.shaderProgram, "u_IsUseDiffuseTexture");
 			gl.uniform1i(u_IsUseDiffuseTexture, 1);
 	
 			var u_DiffuseTexture = gl.getUniformLocation(gl.shaderProgram, "u_DiffuseTexture");
@@ -211,7 +233,24 @@ function drawModel(gl, model, vpMatrix) {
 		else {
 			gl.uniform1i(u_IsUseDiffuseTexture, 0);
 		}
+
+
+		var u_IsUseNormalTexture = gl.getUniformLocation(gl.shaderProgram, "u_IsUseNormalTexture");
+
+		if (normalTexture && mesh.tangents != null) {
 	
+			gl.uniform1i(u_IsUseNormalTexture, 1);
+	
+			var u_NormalTexture = gl.getUniformLocation(gl.shaderProgram, "u_NormalTexture");
+			gl.uniform1i(u_NormalTexture, 1);
+	
+			gl.activeTexture(gl.TEXTURE1);
+			gl.bindTexture(gl.TEXTURE_2D, normalTexture.object);
+		}
+		else {	
+			gl.uniform1i(u_IsUseNormalTexture, 0);
+		}
+
 	
 		// Draw mesh
 		let vao = mesh.vao;
@@ -220,6 +259,7 @@ function drawModel(gl, model, vpMatrix) {
 		gl.drawElements(gl.TRIANGLES, mesh.indices.length, gl.UNSIGNED_SHORT, 0);
 		gl.bindVertexArray(null);
 
+		
 	}
 }
 
@@ -254,7 +294,7 @@ function render(canvas, gl) {
 	gl.useProgram(shaderProgram);
 	gl.shaderProgram = shaderProgram;	
 	
-	let model =  _resourceManager.models['monkey.obj'];
+	let model = CreateCube('brick.JPG', 'brick_norm.JPG'); //_resourceManager.models['nanosuit.obj'];
 	model.init(gl);
 	
 	let vpMatrix = getViewPorjectionMatrix(aspect);

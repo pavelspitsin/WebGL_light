@@ -13,6 +13,7 @@ class Material {
 
         this.ambientTexture = null;
         this.diffuseTexture = null;
+        this.normalTexture = null;
         this.alpha = 1.0;
 
     }
@@ -31,15 +32,17 @@ class Material {
         return material;
     }
 
-    static create(ambientColor, diffuseColor, specularColor, specularExponent, ambientTexture, diffuseTexture, alpha) {
+    static create(ambientColor, diffuseColor, specularColor, specularExponent, ambientTexture, normalTexture, diffuseTexture, alpha) {
 
         let material = new Material();
 
         material.ambientColor = (ambientColor == null || ambientColor == undefined) ? material.ambientColor : ambientColor;
         material.diffuseColor = (diffuseColor == null || diffuseColor == undefined) ? material.diffuseColor : diffuseColor;
-        material.specularColor = (specularColor == null || specularColor == undefined) ? material.specularColor : diffuseColor;
+        material.specularColor = (specularColor == null || specularColor == undefined) ? material.specularColor : specularColor;
+        material.specularExponent = (specularExponent == null || specularExponent == undefined) ? material.specularExponent : specularExponent;
 
         material.ambientTexture = (ambientTexture == null || ambientTexture == undefined) ? material.ambientTexture : ambientTexture;
+        material.normalTexture = (normalTexture == null || normalTexture == undefined) ? material.normalTexture : normalTexture;
         material.diffuseTexture = (diffuseTexture == null || diffuseTexture == undefined) ? material.diffuseTexture : diffuseTexture;
         material.alpha = (alpha == null || alpha == undefined) ? material.alpha : alpha;
 
@@ -72,6 +75,7 @@ class Mesh {
         this.vertices = [];
         this.normals = [];
         this.indices = [];
+        this.tangents = null;
         this.materialName = null;
         this.texCoords = [];
         this.initialized = false;
@@ -109,6 +113,9 @@ class Mesh {
         initArrayBuffer(gl, new Float32Array(this.vertices), 3, gl.FLOAT, "a_Position");
         initArrayBuffer(gl, new Float32Array(this.normals), 3, gl.FLOAT, "a_Normal");
 
+        if (this.tangents != null)
+            initArrayBuffer(gl, new Float32Array(this.tangents), 3, gl.FLOAT, "a_Tangent");
+
         if (this.isUseTexture)
             initArrayBuffer(gl, new Float32Array(this.texCoords), 2, gl.FLOAT, "a_TexCoord");	
                 
@@ -124,12 +131,14 @@ class Mesh {
 
   
 
-function CreateCube(texture) {
+function CreateCube(texture, normalTexture) {
 
     let material = Material.createDefault();
     material.diffuseTexture = texture;
+    material.normalTexture = normalTexture;
 
     let mesh = CreateCubeMesh(material.name);
+    mesh.tangents = ObjLoader.calculateTangents(mesh.indices, mesh.vertices, mesh.texCoords);
     let meshes = [];
     meshes.push(mesh);
 
@@ -141,6 +150,8 @@ function CreateCube(texture) {
     let model = new Model(meshes, position, rotation, scale);
     model.materials = [];
     model.materials[material.name] = material;
+
+    
 
     return model;
 }

@@ -30,7 +30,7 @@ class MtlLoader {
 
     parseFile(fileContet) {
 
-        let materials = [];
+        let materials = {};
         let currentMaterial = null;
 
 
@@ -114,6 +114,17 @@ class MtlLoader {
                     }
 
                     currentMaterial.alpha = parseFloat(words[1]);
+                    break;
+                }
+
+
+                case 'map_Bump':
+                {
+                    if (words.length != 2) {                        
+                        console.log(`WARNING. Incorrect '${firstWord}' value in ${i} line.`);
+                        break;
+                    }                    
+                    currentMaterial.normalTexture = words[1];
                     break;
                 }
 
