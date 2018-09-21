@@ -12,6 +12,7 @@ const VSHADER_SOURCE = `
 	uniform mat4 u_NormalMatrix;
 	uniform mat4 u_ModelMatrix;
 	uniform bool u_IsUseDiffuseTexture;
+	uniform bool u_IsUseNormalTexture;
 
 	varying vec3 v_Position;
 	varying vec3 v_Normal;
@@ -25,7 +26,7 @@ const VSHADER_SOURCE = `
 		v_Normal = normalize(vec3(u_NormalMatrix * a_Normal));
 
 			
-		if (u_IsUseDiffuseTexture) {
+		if (u_IsUseDiffuseTexture || u_IsUseNormalTexture) {
 			v_TexCoord = a_TexCoord;
 		}
 
@@ -102,32 +103,63 @@ const FSHADER_SOURCE =  `
 `;
 
 
-const ROTATE = true;  
-
 const LIGHT_COLOR = [1.0, 1.0, 1.0];
 const AMBIENT_COLOR = [0.5, 0.5, 0.5];
-const LIGHT_POSITION = [5.0, 5.0, 10.0];
+const LIGHT_POSITION = [5.0, 15.0, 20.0];
 
-//const CAMERA_POSITION = [5.0, 14.0, 19.0];
-//const CAMERA_LOOK_AT = [0.0, 8.0, 0.0];
-
-const CAMERA_POSITION = [0.0, 3.0, 5.0];
-const CAMERA_LOOK_AT = [0.0, 0.0, 0.0];
-
-
-let _angle = 0;
 let _resourceManager = null;
  
+const _models = {
+	plane: null,
+	cube: null,
+	nanosuit: null
+};
+
+
+const _state = {
+
+	isRotate: true,
+	isUseNormalMap: true,
+	isUseDiffuseMap: true,
+	rotateAngle: 0,
+	
+	cameraPosition: [0.0, 2.0, 6.0],
+	cameraLookAt: [0.0, 0.0, 0.0],
+ 
+	currentModel: null
+};
   
 
 function angleChange(deltaTime) {
-	_angle += 10 * deltaTime;	
-	_angle = _angle % 360;
+	_state.rotateAngle += 10 * deltaTime;	
+	_state.rotateAngle = _state.rotateAngle % 360;
 }
   
   
 
-function initLightAttributes(gl) {
+function initModels(gl) {
+
+	// Plane
+	_models.plane = CreatePlane();
+	_models.plane.init(gl);
+	_models.plane.scale = vec3.clone([80, 1, 80]);
+	_models.plane.materials['default'].diffuseColor = [0.8, 0.8, 0.8];
+
+
+	// Cube
+	_models.cube = CreateCube('brick.JPG', 'brick_norm.JPG');
+	_models.cube.init(gl);
+
+
+	// Nanosuit
+	_models.nanosuit = _resourceManager.models['nanosuit.obj'];
+	_models.nanosuit.init(gl);
+
+	_state.currentModel = _models.cube;
+}
+
+
+function setLightAttributes(gl) {
 
 	let u_Light_ambientColor = gl.getUniformLocation(gl.shaderProgram, "u_Light.ambientColor");
 	gl.uniform3fv(u_Light_ambientColor, new Float32Array(AMBIENT_COLOR));
@@ -139,6 +171,11 @@ function initLightAttributes(gl) {
 	gl.uniform3fv(u_Light_position, new Float32Array(LIGHT_POSITION));
 }
   
+function setCameraAttributes(gl) {
+	let u_ViewPosition = gl.getUniformLocation(gl.shaderProgram, "u_ViewPosition");
+	gl.uniform3fv(u_ViewPosition, new Float32Array(_state.cameraPosition));
+}
+
 
 
 function getViewPorjectionMatrix(aspect) {
@@ -146,7 +183,7 @@ function getViewPorjectionMatrix(aspect) {
 	mat4.perspective(projMat, 45.0 * Math.PI / 180, aspect, 0.1, 100);	
 		
 	let viewMat = mat4.create(); 		
-	mat4.lookAt(viewMat, CAMERA_POSITION, CAMERA_LOOK_AT, [0.0, 1.0, 0.0]);
+	mat4.lookAt(viewMat, _state.cameraPosition, _state.cameraLookAt, [0.0, 1.0, 0.0]);
 		
 	let mvMatrix = mat4.create();
 	mat4.multiply(mvMatrix, projMat, viewMat);
@@ -155,12 +192,6 @@ function getViewPorjectionMatrix(aspect) {
 }
 
 
-function setCameraAttributes(gl) {
-
-	let u_ViewPosition = gl.getUniformLocation(gl.shaderProgram, "u_ViewPosition");
-	gl.uniform3fv(u_ViewPosition, new Float32Array(CAMERA_POSITION));
-
-}
 
 
 function drawModel(gl, model, vpMatrix) {
@@ -174,7 +205,7 @@ function drawModel(gl, model, vpMatrix) {
 	let modelMatrix = mat4.create();	
 
 	mat4.translate(modelMatrix, modelMatrix, model.position);
-	mat4.rotate(modelMatrix, modelMatrix, _angle * Math.PI / 180, [0.0, 1.0, 0.0]);
+	mat4.rotate(modelMatrix, modelMatrix, _state.rotateAngle * Math.PI / 180, [0.0, 1.0, 0.0]);
 	mat4.scale(modelMatrix, modelMatrix, model.scale);	
 		
 	let u_ModelMatrix = gl.getUniformLocation(gl.shaderProgram, "u_ModelMatrix");
@@ -220,7 +251,7 @@ function drawModel(gl, model, vpMatrix) {
 
 		var u_IsUseDiffuseTexture = gl.getUniformLocation(gl.shaderProgram, "u_IsUseDiffuseTexture");
 
-		if (mesh.isUseTexture && texture) {
+		if (mesh.isUseTexture && texture && _state.isUseDiffuseMap) {
 	
 			gl.uniform1i(u_IsUseDiffuseTexture, 1);
 	
@@ -237,7 +268,7 @@ function drawModel(gl, model, vpMatrix) {
 
 		var u_IsUseNormalTexture = gl.getUniformLocation(gl.shaderProgram, "u_IsUseNormalTexture");
 
-		if (normalTexture && mesh.tangents != null) {
+		if (normalTexture && mesh.tangents != null && _state.isUseNormalMap) {
 	
 			gl.uniform1i(u_IsUseNormalTexture, 1);
 	
@@ -264,6 +295,7 @@ function drawModel(gl, model, vpMatrix) {
 }
 
 
+
 function start() {
 	
 	let canvas = document.getElementById("glCanvas");	
@@ -275,13 +307,16 @@ function start() {
 	}
 
 	// GL init
-	gl.clearColor(0.0, 0.0, 0.0, 1.0);
+	gl.clearColor(0.7, 0.7, 0.7, 1.0);
 	gl.viewport(0, 0, canvas.width, canvas.height);
 	gl.enable(gl.DEPTH_TEST);
 
 
 	_resourceManager = new ResourceManager(gl);
-	_resourceManager.onload = () => { render(canvas, gl); }
+
+	_resourceManager.onload = () => {
+		render(canvas, gl);
+	}
 	_resourceManager.loadResources();
 
 }
@@ -294,20 +329,20 @@ function render(canvas, gl) {
 	gl.useProgram(shaderProgram);
 	gl.shaderProgram = shaderProgram;	
 	
-	let model = CreateCube('brick.JPG', 'brick_norm.JPG'); //_resourceManager.models['nanosuit.obj'];
-	model.init(gl);
-	
 	let vpMatrix = getViewPorjectionMatrix(aspect);
 		
-	initLightAttributes(gl);
+	initModels(gl);
+
+	setLightAttributes(gl);
 	setCameraAttributes(gl);
 
 	(function animloop(){		
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-		drawModel(gl, model, vpMatrix);
+		drawModel(gl, _models.plane, vpMatrix);
+		drawModel(gl, _state.currentModel, vpMatrix);
 
-		if (ROTATE) {
+		if (_state.isRotate) {
 			angleChange(1.0 / 60.0);
 		}
 		requestAnimFrame(animloop);		
