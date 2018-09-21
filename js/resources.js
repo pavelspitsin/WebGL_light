@@ -9,6 +9,13 @@ const TEXTURES_RESOURCES = [
     'helmet_diff.png', 
     'leg_dif.png',
 
+    'arm_showroom_ddn.png', 
+    'body_showroom_ddn.png', 
+    'glass_ddn.png', 
+    'hand_showroom_ddn.png', 
+    'helmet_showroom_ddn.png', 
+    'leg_showroom_ddn.png',
+
     'brick.JPG', 
     'brick_norm.JPG'
 ];
