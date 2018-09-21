@@ -98,9 +98,13 @@ class Mesh {
         return this;
     }
 
-    get isUseTexture() {
+    get hasTextureCoords() {
         return this.texCoords != null && this.texCoords != undefined && this.texCoords.length > 0 ;
       }
+
+    get hasTangents() {
+        return this.tangents != null && this.tangents != undefined && this.tangents.length > 0 ;
+    }
 
     createBuffers(gl) {
 
@@ -111,10 +115,10 @@ class Mesh {
         initArrayBuffer(gl, new Float32Array(this.vertices), 3, gl.FLOAT, "a_Position");
         initArrayBuffer(gl, new Float32Array(this.normals), 3, gl.FLOAT, "a_Normal");
 
-        if (this.tangents != null)
+        if (this.hasTangents != null)
             initArrayBuffer(gl, new Float32Array(this.tangents), 3, gl.FLOAT, "a_Tangent");
 
-        if (this.isUseTexture)
+        if (this.hasTextureCoords)
             initArrayBuffer(gl, new Float32Array(this.texCoords), 2, gl.FLOAT, "a_TexCoord");	
                 
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);

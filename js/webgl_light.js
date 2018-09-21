@@ -251,7 +251,7 @@ function drawModel(gl, model, vpMatrix) {
 
 		var u_IsUseDiffuseMap = gl.getUniformLocation(gl.shaderProgram, "u_IsUseDiffuseMap");
 
-		if (mesh.isUseTexture && diffuseMap && _state.isUseDiffuseMap) {
+		if (mesh.hasTextureCoords && diffuseMap && _state.isUseDiffuseMap) {
 	
 			gl.uniform1i(u_IsUseDiffuseMap, 1);
 	
@@ -268,7 +268,7 @@ function drawModel(gl, model, vpMatrix) {
 
 		var u_IsUseNormalMap = gl.getUniformLocation(gl.shaderProgram, "u_IsUseNormalMap");
 
-		if (normalMap && mesh.tangents != null && _state.isUseNormalMap) {
+		if (mesh.hasTextureCoords && mesh.hasTangents && normalMap && _state.isUseNormalMap) {
 	
 			gl.uniform1i(u_IsUseNormalMap, 1);
 	
