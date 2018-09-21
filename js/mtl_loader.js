@@ -124,18 +124,7 @@ class MtlLoader {
                         console.log(`WARNING. Incorrect '${firstWord}' value in ${i} line.`);
                         break;
                     }                    
-                    currentMaterial.normalTexture = words[1];
-                    break;
-                }
-
-
-                case 'map_Ka':
-                {
-                    if (words.length != 2) {                        
-                        console.log(`WARNING. Incorrect '${firstWord}' value in ${i} line.`);
-                        break;
-                    }                    
-                    currentMaterial.ambientTexture = words[1];
+                    currentMaterial.normalMap = words[1];
                     break;
                 }
 
@@ -146,7 +135,7 @@ class MtlLoader {
                         console.log(`WARNING. Incorrect '${firstWord}' value in ${i} line.`);
                         break;
                     }                    
-                    currentMaterial.diffuseTexture = words[1];
+                    currentMaterial.diffuseMap = words[1];
                     break;  
                 }
 

@@ -11,9 +11,8 @@ class Material {
         this.specularColor = vec3.clone([0.0,0.0,0.0]);
         this.specularExponent = 0.0;
 
-        this.ambientTexture = null;
-        this.diffuseTexture = null;
-        this.normalTexture = null;
+        this.diffuseMap = null;
+        this.normalMap = null;
         this.alpha = 1.0;
 
     }
@@ -32,7 +31,7 @@ class Material {
         return material;
     }
 
-    static create(ambientColor, diffuseColor, specularColor, specularExponent, ambientTexture, normalTexture, diffuseTexture, alpha) {
+    static create(ambientColor, diffuseColor, specularColor, specularExponent, normalMap, diffuseMap, alpha) {
 
         let material = new Material();
 
@@ -41,9 +40,8 @@ class Material {
         material.specularColor = (specularColor == null || specularColor == undefined) ? material.specularColor : specularColor;
         material.specularExponent = (specularExponent == null || specularExponent == undefined) ? material.specularExponent : specularExponent;
 
-        material.ambientTexture = (ambientTexture == null || ambientTexture == undefined) ? material.ambientTexture : ambientTexture;
-        material.normalTexture = (normalTexture == null || normalTexture == undefined) ? material.normalTexture : normalTexture;
-        material.diffuseTexture = (diffuseTexture == null || diffuseTexture == undefined) ? material.diffuseTexture : diffuseTexture;
+        material.normalMap = (normalMap == null || normalMap == undefined) ? material.normalMap : normalMap;
+        material.diffuseMap = (diffuseMap == null || diffuseMap == undefined) ? material.diffuseMap : diffuseMap;
         material.alpha = (alpha == null || alpha == undefined) ? material.alpha : alpha;
 
         return material;
@@ -131,11 +129,11 @@ class Mesh {
 
   
 
-function CreateCube(texture, normalTexture) {
+function CreateCube(diffuseMap, normalMap) {
 
     let material = Material.createDefault();
-    material.diffuseTexture = texture;
-    material.normalTexture = normalTexture;
+    material.diffuseMap = diffuseMap;
+    material.normalMap = normalMap;
 
     let mesh = CreateCubeMesh(material.name);
     mesh.tangents = ObjLoader.calculateTangents(mesh.indices, mesh.vertices, mesh.texCoords);
@@ -155,11 +153,11 @@ function CreateCube(texture, normalTexture) {
 }
 
 
-function CreatePlane(texture, normalTexture) {
+function CreatePlane(diffuseMap, normalMap) {
 
     let material = Material.createDefault();
-    material.diffuseTexture = texture;
-    material.normalTexture = normalTexture;
+    material.diffuseMap = diffuseMap;
+    material.normalMap = normalMap;
 
     let mesh = CreatePlaneMesh(material.name);
     mesh.tangents = ObjLoader.calculateTangents(mesh.indices, mesh.vertices, mesh.texCoords);

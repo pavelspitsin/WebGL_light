@@ -11,8 +11,8 @@ const VSHADER_SOURCE = `
 	uniform mat4 u_MVPMatrix;
 	uniform mat4 u_NormalMatrix;
 	uniform mat4 u_ModelMatrix;
-	uniform bool u_IsUseDiffuseTexture;
-	uniform bool u_IsUseNormalTexture;
+	uniform bool u_IsUseDiffuseMap;
+	uniform bool u_IsUseNormalMap;
 
 	varying vec3 v_Position;
 	varying vec3 v_Normal;
@@ -26,7 +26,7 @@ const VSHADER_SOURCE = `
 		v_Normal = normalize(vec3(u_NormalMatrix * a_Normal));
 
 			
-		if (u_IsUseDiffuseTexture || u_IsUseNormalTexture) {
+		if (u_IsUseDiffuseMap || u_IsUseNormalMap) {
 			v_TexCoord = a_TexCoord;
 		}
 
@@ -57,10 +57,10 @@ const FSHADER_SOURCE =  `
 		vec3 diffuseColor;
 	};
 
-	uniform sampler2D u_DiffuseTexture;
-	uniform bool u_IsUseDiffuseTexture;
-	uniform sampler2D u_NormalTexture;
-	uniform bool u_IsUseNormalTexture;
+	uniform sampler2D u_DiffuseMap;
+	uniform bool u_IsUseDiffuseMap;
+	uniform sampler2D u_NormalMap;
+	uniform bool u_IsUseNormalMap;
 
 	uniform Material u_Material;
 	uniform Light u_Light;
@@ -75,8 +75,8 @@ const FSHADER_SOURCE =  `
 		
 		vec3 normal = v_Normal;
 
-		if (u_IsUseNormalTexture) {
-			normal = texture2D(u_NormalTexture, v_TexCoord).rgb;
+		if (u_IsUseNormalMap) {
+			normal = texture2D(u_NormalMap, v_TexCoord).rgb;
 			normal = normalize(normal * 2.0 - 1.0);
 			normal = normalize(v_TBN * normal);
 		}
@@ -94,8 +94,8 @@ const FSHADER_SOURCE =  `
 
 		vec4 color =  vec4(ambient + diffuse + specular, u_Material.alpha);
 
-		if (u_IsUseDiffuseTexture) {
-			color *= texture2D(u_DiffuseTexture, v_TexCoord);
+		if (u_IsUseDiffuseMap) {
+			color *= texture2D(u_DiffuseMap, v_TexCoord);
 		}
 
 		gl_FragColor = color;
@@ -122,7 +122,7 @@ const _state = {
 	isUseNormalMap: true,
 	isUseDiffuseMap: true,
 	rotateAngle: 0,
-	
+
 	cameraPosition: [0.0, 2.0, 6.0],
 	cameraLookAt: [0.0, 0.0, 0.0],
  
@@ -233,8 +233,8 @@ function drawModel(gl, model, vpMatrix) {
 
 		let mesh = meshes[i];
 		let material = model.materials[mesh.materialName];
-		let texture = _resourceManager.getTexture(material.diffuseTexture);
-		let normalTexture = _resourceManager.getTexture(material.normalTexture);
+		let diffuseMap = _resourceManager.getTexture(material.diffuseMap);
+		let normalMap = _resourceManager.getTexture(material.normalMap);
 
 		var u_Material_alpha = gl.getUniformLocation(gl.shaderProgram, "u_Material.alpha");
 		var u_Material_diffuseColor = gl.getUniformLocation(gl.shaderProgram, "u_Material.diffuseColor");
@@ -249,37 +249,37 @@ function drawModel(gl, model, vpMatrix) {
 		gl.uniform1f(u_Material_specularExponent, material.specularExponent);
 
 
-		var u_IsUseDiffuseTexture = gl.getUniformLocation(gl.shaderProgram, "u_IsUseDiffuseTexture");
+		var u_IsUseDiffuseMap = gl.getUniformLocation(gl.shaderProgram, "u_IsUseDiffuseMap");
 
-		if (mesh.isUseTexture && texture && _state.isUseDiffuseMap) {
+		if (mesh.isUseTexture && diffuseMap && _state.isUseDiffuseMap) {
 	
-			gl.uniform1i(u_IsUseDiffuseTexture, 1);
+			gl.uniform1i(u_IsUseDiffuseMap, 1);
 	
-			var u_DiffuseTexture = gl.getUniformLocation(gl.shaderProgram, "u_DiffuseTexture");
-			gl.uniform1i(u_DiffuseTexture, 0);
+			var u_DiffuseMap = gl.getUniformLocation(gl.shaderProgram, "u_DiffuseMap");
+			gl.uniform1i(u_DiffuseMap, 0);
 	
 			gl.activeTexture(gl.TEXTURE0);
-			gl.bindTexture(gl.TEXTURE_2D, texture.object);
+			gl.bindTexture(gl.TEXTURE_2D, diffuseMap.object);
 		}
 		else {
-			gl.uniform1i(u_IsUseDiffuseTexture, 0);
+			gl.uniform1i(u_IsUseDiffuseMap, 0);
 		}
 
 
-		var u_IsUseNormalTexture = gl.getUniformLocation(gl.shaderProgram, "u_IsUseNormalTexture");
+		var u_IsUseNormalMap = gl.getUniformLocation(gl.shaderProgram, "u_IsUseNormalMap");
 
-		if (normalTexture && mesh.tangents != null && _state.isUseNormalMap) {
+		if (normalMap && mesh.tangents != null && _state.isUseNormalMap) {
 	
-			gl.uniform1i(u_IsUseNormalTexture, 1);
+			gl.uniform1i(u_IsUseNormalMap, 1);
 	
-			var u_NormalTexture = gl.getUniformLocation(gl.shaderProgram, "u_NormalTexture");
-			gl.uniform1i(u_NormalTexture, 1);
+			var u_NormalMap = gl.getUniformLocation(gl.shaderProgram, "u_NormalMap");
+			gl.uniform1i(u_NormalMap, 1);
 	
 			gl.activeTexture(gl.TEXTURE1);
-			gl.bindTexture(gl.TEXTURE_2D, normalTexture.object);
+			gl.bindTexture(gl.TEXTURE_2D, normalMap.object);
 		}
 		else {	
-			gl.uniform1i(u_IsUseNormalTexture, 0);
+			gl.uniform1i(u_IsUseNormalMap, 0);
 		}
 
 	
@@ -313,10 +313,7 @@ function start() {
 
 
 	_resourceManager = new ResourceManager(gl);
-
-	_resourceManager.onload = () => {
-		render(canvas, gl);
-	}
+	_resourceManager.onload = () => { render(canvas, gl); }
 	_resourceManager.loadResources();
 
 }
