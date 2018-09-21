@@ -151,11 +151,43 @@ function CreateCube(texture, normalTexture) {
     model.materials = [];
     model.materials[material.name] = material;
 
+    return model;
+}
+
+
+function CreatePlane(texture, normalTexture) {
+
+    let material = Material.createDefault();
+    material.diffuseTexture = texture;
+    material.normalTexture = normalTexture;
+
+    let mesh = CreatePlaneMesh(material.name);
+    mesh.tangents = ObjLoader.calculateTangents(mesh.indices, mesh.vertices, mesh.texCoords);
+    let meshes = [];
+    meshes.push(mesh);
+
+    let position = vec3.create();
+    let rotation = vec3.create();
+    let scale = vec3.clone([1,1,1]);
+
     
+    let model = new Model(meshes, position, rotation, scale);
+    model.materials = [];
+    model.materials[material.name] = material;
 
     return model;
 }
 
+
+function CreatePlaneMesh(materialName) {
+
+    const vertices = [-1.0,-1.0,-1.0,   1.0,-1.0,-1.0,   1.0,-1.0, 1.0,  -1.0,-1.0, 1.0];
+    const normals = [0.0, 1.0, 0.0,   0.0, 1.0, 0.0,   0.0, 1.0, 0.0,   0.0, 1.0, 0.0];
+    const texCoords = [1.0, 0.0,   1.0, 1.0,   0.0, 1.0,    0.0, 0.0];
+    const indices = [0, 1, 2,   0, 2, 3];
+
+    return Mesh.create(vertices, normals, indices, texCoords, materialName);
+}
 
 function CreateCubeMesh(materialName) {
 
@@ -187,12 +219,12 @@ function CreateCubeMesh(materialName) {
 
 
     const texCoords = [
-        1.0, 1.0,   0.0, 1.0,   0.0, 0.0,    1.0, 0.0,     
-        0.0, 1.0,   0.0, 0.0,   1.0, 0.0,    1.0, 1.0,    
-        1.0, 0.0,   1.0, 1.0,   0.0, 1.0,    0.0, 0.0,    
-        1.0, 1.0,   0.0, 1.0,   0.0, 0.0,    1.0, 0.0,    
-        0.0, 1.0,   1.0, 1.0,   1.0, 0.0,    0.0, 0.0,    
-        0.0, 0.0,   1.0, 0.0,   1.0, 1.0,    0.0, 1.0
+        1.0, 1.0,   0.0, 1.0,   0.0, 0.0,    1.0, 0.0,                      // v0-v1-v2-v3 fron     
+        0.0, 1.0,   0.0, 0.0,   1.0, 0.0,    1.0, 1.0,                      // v0-v3-v4-v5 righ    
+        1.0, 0.0,   1.0, 1.0,   0.0, 1.0,    0.0, 0.0,                      // v0-v5-v6-v1 up    
+        1.0, 1.0,   0.0, 1.0,   0.0, 0.0,    1.0, 0.0,                      // v1-v6-v7-v2 left    
+        0.0, 1.0,   1.0, 1.0,   1.0, 0.0,    0.0, 0.0,                      // v7-v4-v3-v2 down    
+        0.0, 0.0,   1.0, 0.0,   1.0, 1.0,    0.0, 1.0                       // v4-v7-v6-v5 back
     ];
     
     const indices = [
