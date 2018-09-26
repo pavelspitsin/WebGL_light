@@ -121,7 +121,7 @@ const _state = {
 	isRotate: true,
 	isUseNormalMap: true,
 	isUseDiffuseMap: true,
-	rotateAngle: 0,
+	rotationAngle: 10,
 
 	cameraPosition: [0.0, 2.0, 6.0],
 	cameraLookAt: [0.0, 0.0, 0.0],
@@ -129,13 +129,17 @@ const _state = {
 	currentModel: null
 };
   
+  
+function updateCurrentModel(deltaTime) {
 
-function angleChange(deltaTime) {
-	_state.rotateAngle += 10 * deltaTime;	
-	_state.rotateAngle = _state.rotateAngle % 360;
+	// update rotation
+	
+	if (_state.isRotate) {
+		let rotationY = _state.rotationAngle * deltaTime;
+		_state.currentModel.addRotation([0, rotationY, 0]);		
+	}
 }
-  
-  
+
 
 function initModels(gl) {
 
@@ -202,11 +206,8 @@ function drawModel(gl, model, vpMatrix) {
 		return;
 
 	// Model matrix
-	let modelMatrix = mat4.create();	
-
-	mat4.translate(modelMatrix, modelMatrix, model.position);
-	mat4.rotate(modelMatrix, modelMatrix, _state.rotateAngle * Math.PI / 180, [0.0, 1.0, 0.0]);
-	mat4.scale(modelMatrix, modelMatrix, model.scale);	
+	let modelMatrix = mat4.create();
+	mat4.fromRotationTranslationScale(modelMatrix, model.quatRotate, model.position, model.scale);
 		
 	let u_ModelMatrix = gl.getUniformLocation(gl.shaderProgram, "u_ModelMatrix");
 	gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix);
@@ -337,11 +338,9 @@ function render(canvas, gl) {
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
 		drawModel(gl, _models.plane, vpMatrix);
-		drawModel(gl, _state.currentModel, vpMatrix);
+		drawModel(gl, _state.currentModel, vpMatrix);		
+		updateCurrentModel(1.0 / 60.0);
 
-		if (_state.isRotate) {
-			angleChange(1.0 / 60.0);
-		}
 		requestAnimFrame(animloop);		
 	})();
 

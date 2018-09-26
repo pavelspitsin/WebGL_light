@@ -57,12 +57,39 @@ class Model {
         this.position = (position == null || position == undefined) ? vec3.create() : position;
         this.rotation = (rotation == null || rotation == undefined) ? vec3.create() : rotation;
         this.scale = (scale == null || scale == undefined) ? vec3.clone([1,1,1]) : scale;
+
+        this.quatRotate = quat.create();
+        quat.fromEuler(this.quatRotate, this.rotation[0], this.rotation[1], this.rotation[2]);
+
     }
 
     init(gl) {
         for (let i = 0; i < this.meshes.length; ++i) {
             this.meshes[i].init(gl);
         }
+    }
+
+    addRotation(rotation) {
+        this.rotation[0] += rotation[0];
+        if (this.rotation[0] >= 360) {
+            this.rotation[0] = this.rotation[0] - 360;
+        }
+
+        this.rotation[1] += rotation[1];
+        if (this.rotation[1] >= 360) {
+            this.rotation[1] = this.rotation[1] - 360;
+        }
+        this.rotation[2] += rotation[2];
+        if (this.rotation[2] >= 360) {
+            this.rotation[2] = this.rotation[2] - 360;
+        }
+
+        quat.fromEuler(this.quatRotate, this.rotation[0], this.rotation[1], this.rotation[2]);
+    }
+
+    setRotation(rotation) {
+        this.rotation = vec3.clone(rotation);
+        quat.fromEuler(this.quatRotate, this.rotation[0], this.rotation[1], this.rotation[2]);
     }
 }
 
