@@ -109,12 +109,8 @@ const LIGHT_POSITION = [5.0, 15.0, 20.0];
 
 let _resourceManager = null;
  
-const _models = {
-	plane: null,
-	cube: null,
-	nanosuit: null
-};
-
+const _models = {};
+let _camera = null;
 
 const _state = {
 
@@ -123,7 +119,6 @@ const _state = {
 	isUseDiffuseMap: true,
 	rotationAngle: 10,
 
-	camera: null, 
 	currentModel: null
 };
   
@@ -157,7 +152,7 @@ function initModels(gl) {
 	_models.nanosuit = _resourceManager.models['nanosuit.obj'];
 	_models.nanosuit.init(gl);
 
-	_state.currentModel = _models.nanosuit;
+	_state.currentModel = _models.cube;
 }
 
 
@@ -316,15 +311,14 @@ function render(canvas, gl) {
 	setLightAttributes(gl);
 
 
-	_state.camera = new Camera(aspect);
-	_state.camera.lookAt([0, 2, 6], [0, 0, 0], [0, 1, 0]);
+	_camera = new Camera(aspect);
+	_camera.lookAt([0, 2, 6], [0, 0, 0], [0, 1, 0]);
 	setCameraAttributes(gl, [0, 2, 6]);
-
-	let vpMatrix = _state.camera.getVPMatrix();
 
 	(function animloop(){		
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
+		let vpMatrix = _camera.getVPMatrix();
 		drawModel(gl, _models.plane, vpMatrix);
 		drawModel(gl, _state.currentModel, vpMatrix);		
 		updateCurrentModel(1.0 / 60.0);

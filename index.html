@@ -5,7 +5,40 @@
 	<meta charset="utf-8" />
 </head>
 <body>
-	<canvas id="glCanvas" width="640" height="480">Your browser not support Canvas.</canvas>
+
+	<table cellspacing="10">
+		<tr>
+			<td>
+				<canvas id="glCanvas" width="640" height="480">Your browser not support Canvas.</canvas>
+			</td>
+			<td valign="top">
+				<table cellspacing="5">
+						<tr>
+							<td>Model: </td>
+							<td>
+								<select size="1" id="models_combobox" onchange="models_combobox_changed(this)">
+										<option selected value="cube">Cube</option>
+										<option value="nanosuit">Nanosuit</option>
+								</select>
+							</td>
+						</tr>
+						<tr>
+							<td>Rotate: </td>
+							<td><input type="checkbox" id="rotate_checkbox" onclick="rotate_checkbox_changed();"></td>
+						</tr>
+						<tr>
+							<td>Use diffuse map: </td>
+							<td><input type="checkbox" id="diffuse_checkbox" onclick="diffuse_checkbox_changed();"></td>
+						</tr>
+						<tr>
+							<td>Use normal map: </td>
+							<td><input type="checkbox" id="normal_checkbox" onclick="normal_checkbox_changed();"></td>
+						</tr>
+					</table>
+			</td>
+		</tr>
+	</table>
+
 	<script type="text/javascript" src="js/gl-matrix-min.js"></script>
 	<script type="text/javascript" src="js/webgl_utils.js"></script>
 	<script type="text/javascript" src="js/mtl_loader.js"></script>
@@ -14,5 +47,10 @@
 	<script type="text/javascript" src="js/resources.js"></script>
 	<script type="text/javascript" src="js/camera.js"></script>
 	<script type="text/javascript" src="js/webgl_light.js"></script>
+	<script type="text/javascript" src="js/switches.js"></script>
+	
+	<script type="text/javascript">
+		initSwitches();
+	</script>
 </body>
 </html>
