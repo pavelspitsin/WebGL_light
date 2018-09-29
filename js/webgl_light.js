@@ -119,13 +119,11 @@ const _models = {
 const _state = {
 
 	isRotate: true,
-	isUseNormalMap: true,
+	isUseNormalMap: false,
 	isUseDiffuseMap: true,
 	rotationAngle: 10,
 
-	cameraPosition: [0.0, 2.0, 6.0],
-	cameraLookAt: [0.0, 0.0, 0.0],
- 
+	camera: null, 
 	currentModel: null
 };
   
@@ -159,7 +157,7 @@ function initModels(gl) {
 	_models.nanosuit = _resourceManager.models['nanosuit.obj'];
 	_models.nanosuit.init(gl);
 
-	_state.currentModel = _models.cube;
+	_state.currentModel = _models.nanosuit;
 }
 
 
@@ -175,25 +173,12 @@ function setLightAttributes(gl) {
 	gl.uniform3fv(u_Light_position, new Float32Array(LIGHT_POSITION));
 }
   
-function setCameraAttributes(gl) {
+
+function setCameraAttributes(gl, position) {
 	let u_ViewPosition = gl.getUniformLocation(gl.shaderProgram, "u_ViewPosition");
-	gl.uniform3fv(u_ViewPosition, new Float32Array(_state.cameraPosition));
+	gl.uniform3fv(u_ViewPosition, new Float32Array(position));
 }
 
-
-
-function getViewPorjectionMatrix(aspect) {
-	let projMat = mat4.create();	
-	mat4.perspective(projMat, 45.0 * Math.PI / 180, aspect, 0.1, 100);	
-		
-	let viewMat = mat4.create(); 		
-	mat4.lookAt(viewMat, _state.cameraPosition, _state.cameraLookAt, [0.0, 1.0, 0.0]);
-		
-	let mvMatrix = mat4.create();
-	mat4.multiply(mvMatrix, projMat, viewMat);
-
-	return mvMatrix;
-}
 
 
 
@@ -327,12 +312,15 @@ function render(canvas, gl) {
 	gl.useProgram(shaderProgram);
 	gl.shaderProgram = shaderProgram;	
 	
-	let vpMatrix = getViewPorjectionMatrix(aspect);
-		
 	initModels(gl);
-
 	setLightAttributes(gl);
-	setCameraAttributes(gl);
+
+
+	_state.camera = new Camera(aspect);
+	_state.camera.lookAt([0, 2, 6], [0, 0, 0], [0, 1, 0]);
+	setCameraAttributes(gl, [0, 2, 6]);
+
+	let vpMatrix = _state.camera.getVPMatrix();
 
 	(function animloop(){		
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
