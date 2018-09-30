@@ -185,13 +185,13 @@ function initModels(gl, models, resourceManager) {
 	// Barrel
     models['barrel'] = {
         model: null,
-        camEye: [0, 2, 6], 
-        camCenter:[0, 0, 0]
+		camEye: [0, 2, 6], 
+		camCenter:[0, 0, 0]
     };	
 
     models['barrel'].model = resourceManager.models['barrel.obj'];
-    models['barrel'].model.position = vec3.clone([0.0, 0.7, 0.0]);
-    models['barrel'].model.scale = vec3.clone([0.25, 0.25, 0.25]);
+    models['barrel'].model.position = vec3.clone([0.0, 0.7, 1.0]);
+    models['barrel'].model.scale = vec3.clone([0.20, 0.20, 0.20]);
     models['barrel'].model.init(gl);
 
 	// Nanosuit

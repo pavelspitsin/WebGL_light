@@ -105,7 +105,7 @@ const FSHADER_SOURCE =  `
 
 const LIGHT_COLOR = [1.0, 1.0, 1.0];
 const AMBIENT_COLOR = [0.5, 0.5, 0.5];
-const LIGHT_POSITION = [5.0, 15.0, 20.0];
+const LIGHT_POSITION = [7.0, 12.0, 20.0];
 
 let _gl = null;
 let _resourceManager = null;
