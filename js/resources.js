@@ -16,11 +16,15 @@ const TEXTURES_RESOURCES = [
     'helmet_showroom_ddn.png', 
     'leg_showroom_ddn.png',
 
+    'barrel.png',
+    'barrelNormal.png',
+
     'brick.JPG', 
     'brick_norm.JPG'
 ];
 
 const MODELS_RESOURCES = [
+    'barrel.obj',
     'monkey.obj',
     'cubs.obj',
     'nanosuit.obj'

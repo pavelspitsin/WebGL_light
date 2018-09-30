@@ -182,6 +182,17 @@ function initModels(gl, models, resourceManager) {
 	models['cube'].model = CreateCube('brick.JPG', 'brick_norm.JPG');
 	models['cube'].model.init(gl);
 
+	// Barrel
+    models['barrel'] = {
+        model: null,
+        camEye: [0, 2, 6], 
+        camCenter:[0, 0, 0]
+    };	
+
+    models['barrel'].model = resourceManager.models['barrel.obj'];
+    models['barrel'].model.position = vec3.clone([0.0, 0.7, 0.0]);
+    models['barrel'].model.scale = vec3.clone([0.25, 0.25, 0.25]);
+    models['barrel'].model.init(gl);
 
 	// Nanosuit
 	models['nanosuit'] = {
