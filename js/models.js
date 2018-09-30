@@ -158,6 +158,41 @@ class Mesh {
     }
 }
 
+
+function initModels(gl, models, resourceManager) {
+
+	// Plane
+	models['plane'] = {
+		model: null
+	};
+
+	models['plane'].model = CreatePlane();
+	models['plane'].model.init(gl);
+	models['plane'].model.scale = vec3.clone([80, 1, 80]);
+	models['plane'].model.materials['default'].diffuseColor = [0.8, 0.8, 0.8];
+
+
+	// Cube
+	models['cube'] = {
+		model: null,
+		camEye: [0, 2, 6], 
+		camCenter:[0, 0, 0]
+	};	
+
+	models['cube'].model = CreateCube('brick.JPG', 'brick_norm.JPG');
+	models['cube'].model.init(gl);
+
+
+	// Nanosuit
+	models['nanosuit'] = {
+		model: null,
+		camEye: [0.0, 13.0, 19.0],
+		camCenter:[0.0, 8.0, 0.0]
+	};	
+
+	models['nanosuit'].model = resourceManager.models['nanosuit.obj'];
+	models['nanosuit'].model.init(gl);
+}
   
 
 function CreateCube(diffuseMap, normalMap) {

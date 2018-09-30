@@ -1,26 +1,5 @@
-function models_combobox_changed(objCombo) {
-
-    switch(objCombo.value)
-    {
-        case 'cube':
-        {
-            _state.currentModel = _models.cube;
-            _camera.lookAt([0, 2, 6], [0, 0, 0], [0, 1, 0]);
-            setCameraAttributes(gl, [0, 2, 6]);
-
-            break;
-        }
-        case 'nanosuit':
-        {
-            _state.currentModel = _models.nanosuit;
-            _camera.lookAt([0.0, 13.0, 19.0], [0.0, 8.0, 0.0], [0, 1, 0]);
-            setCameraAttributes(gl, [0, 2, 6]);
-            
-            break;
-        }
-        default:
-            break;
-    }
+function models_combobox_changed(objCombo) {    
+    setCurrentModel(objCombo.value);   
 }
 
 function rotate_checkbox_changed() {

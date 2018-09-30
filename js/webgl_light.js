@@ -107,6 +107,7 @@ const LIGHT_COLOR = [1.0, 1.0, 1.0];
 const AMBIENT_COLOR = [0.5, 0.5, 0.5];
 const LIGHT_POSITION = [5.0, 15.0, 20.0];
 
+let _gl = null;
 let _resourceManager = null;
  
 const _models = {};
@@ -129,56 +130,47 @@ function updateCurrentModel(deltaTime) {
 	
 	if (_state.isRotate) {
 		let rotationY = _state.rotationAngle * deltaTime;
-		_state.currentModel.addRotation([0, rotationY, 0]);		
+		_models[_state.currentModel].model.addRotation([0, rotationY, 0]);		
 	}
 }
 
 
-function initModels(gl) {
+function setCurrentModel(modelName) {
 
-	// Plane
-	_models.plane = CreatePlane();
-	_models.plane.init(gl);
-	_models.plane.scale = vec3.clone([80, 1, 80]);
-	_models.plane.materials['default'].diffuseColor = [0.8, 0.8, 0.8];
+	let camEye = _models[modelName].camEye;
+	let camCenter = _models[modelName].camCenter;
 
-
-	// Cube
-	_models.cube = CreateCube('brick.JPG', 'brick_norm.JPG');
-	_models.cube.init(gl);
-
-
-	// Nanosuit
-	_models.nanosuit = _resourceManager.models['nanosuit.obj'];
-	_models.nanosuit.init(gl);
-
-	_state.currentModel = _models.cube;
+	_state.currentModel = modelName;
+	_camera.lookAt(camEye, camCenter, [0,1,0]);
+	setCameraAttributes(camEye);
 }
 
 
-function setLightAttributes(gl) {
 
-	let u_Light_ambientColor = gl.getUniformLocation(gl.shaderProgram, "u_Light.ambientColor");
-	gl.uniform3fv(u_Light_ambientColor, new Float32Array(AMBIENT_COLOR));
 
-	let u_Light_diffuseColor = gl.getUniformLocation(gl.shaderProgram, "u_Light.diffuseColor");
-	gl.uniform3fv(u_Light_diffuseColor, new Float32Array(LIGHT_COLOR));
+function setLightAttributes() {
+
+	let u_Light_ambientColor = _gl.getUniformLocation(_gl.shaderProgram, "u_Light.ambientColor");
+	_gl.uniform3fv(u_Light_ambientColor, new Float32Array(AMBIENT_COLOR));
+
+	let u_Light_diffuseColor = _gl.getUniformLocation(_gl.shaderProgram, "u_Light.diffuseColor");
+	_gl.uniform3fv(u_Light_diffuseColor, new Float32Array(LIGHT_COLOR));
 		
-	let u_Light_position = gl.getUniformLocation(gl.shaderProgram, "u_Light.position");
-	gl.uniform3fv(u_Light_position, new Float32Array(LIGHT_POSITION));
+	let u_Light_position = _gl.getUniformLocation(_gl.shaderProgram, "u_Light.position");
+	_gl.uniform3fv(u_Light_position, new Float32Array(LIGHT_POSITION));
 }
   
 
-function setCameraAttributes(gl, position) {
-	let u_ViewPosition = gl.getUniformLocation(gl.shaderProgram, "u_ViewPosition");
-	gl.uniform3fv(u_ViewPosition, new Float32Array(position));
+function setCameraAttributes(position) {
+	let u_ViewPosition = _gl.getUniformLocation(_gl.shaderProgram, "u_ViewPosition");
+	_gl.uniform3fv(u_ViewPosition, new Float32Array(position));
 }
 
 
 
 
 
-function drawModel(gl, model, vpMatrix) {
+function drawModel(model, vpMatrix) {
 	
 	let meshes = model.meshes;
 
@@ -189,8 +181,8 @@ function drawModel(gl, model, vpMatrix) {
 	let modelMatrix = mat4.create();
 	mat4.fromRotationTranslationScale(modelMatrix, model.quatRotate, model.position, model.scale);
 		
-	let u_ModelMatrix = gl.getUniformLocation(gl.shaderProgram, "u_ModelMatrix");
-	gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix);
+	let u_ModelMatrix = _gl.getUniformLocation(_gl.shaderProgram, "u_ModelMatrix");
+	_gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix);
 
 
 	// Normal matrix
@@ -198,16 +190,16 @@ function drawModel(gl, model, vpMatrix) {
 	mat4.invert(normalMatrix, modelMatrix);
 	mat4.transpose(normalMatrix, normalMatrix);		
 		
-	let u_NormalMatrix = gl.getUniformLocation(gl.shaderProgram, "u_NormalMatrix");
-	gl.uniformMatrix4fv(u_NormalMatrix, false, normalMatrix);
+	let u_NormalMatrix = _gl.getUniformLocation(_gl.shaderProgram, "u_NormalMatrix");
+	_gl.uniformMatrix4fv(u_NormalMatrix, false, normalMatrix);
 
 
 	// Model View Projection matrix
 	let mvpMatrix = mat4.create();
 	mat4.multiply(mvpMatrix, vpMatrix, modelMatrix);
 
-	let u_mvpMatrix = gl.getUniformLocation(gl.shaderProgram, "u_MVPMatrix");
-	gl.uniformMatrix4fv(u_mvpMatrix, false, mvpMatrix);
+	let u_mvpMatrix = _gl.getUniformLocation(_gl.shaderProgram, "u_MVPMatrix");
+	_gl.uniformMatrix4fv(u_mvpMatrix, false, mvpMatrix);
 
 
 	for(let i = 0; i < meshes.length; ++i) {
@@ -217,59 +209,59 @@ function drawModel(gl, model, vpMatrix) {
 		let diffuseMap = _resourceManager.getTexture(material.diffuseMap);
 		let normalMap = _resourceManager.getTexture(material.normalMap);
 
-		var u_Material_alpha = gl.getUniformLocation(gl.shaderProgram, "u_Material.alpha");
-		var u_Material_diffuseColor = gl.getUniformLocation(gl.shaderProgram, "u_Material.diffuseColor");
-		var u_Material_ambientColor = gl.getUniformLocation(gl.shaderProgram, "u_Material.ambientColor");
-		var u_Material_specularColor = gl.getUniformLocation(gl.shaderProgram, "u_Material.specularColor");
-		var u_Material_specularExponent = gl.getUniformLocation(gl.shaderProgram, "u_Material.specularExponent");
+		var u_Material_alpha = _gl.getUniformLocation(_gl.shaderProgram, "u_Material.alpha");
+		var u_Material_diffuseColor = _gl.getUniformLocation(_gl.shaderProgram, "u_Material.diffuseColor");
+		var u_Material_ambientColor = _gl.getUniformLocation(_gl.shaderProgram, "u_Material.ambientColor");
+		var u_Material_specularColor = _gl.getUniformLocation(_gl.shaderProgram, "u_Material.specularColor");
+		var u_Material_specularExponent = _gl.getUniformLocation(_gl.shaderProgram, "u_Material.specularExponent");
 
-		gl.uniform1f(u_Material_alpha, material.alpha);
-		gl.uniform3fv(u_Material_diffuseColor, material.diffuseColor);
-		gl.uniform3fv(u_Material_ambientColor, material.ambientColor);
-		gl.uniform3fv(u_Material_specularColor, material.specularColor);
-		gl.uniform1f(u_Material_specularExponent, material.specularExponent);
+		_gl.uniform1f(u_Material_alpha, material.alpha);
+		_gl.uniform3fv(u_Material_diffuseColor, material.diffuseColor);
+		_gl.uniform3fv(u_Material_ambientColor, material.ambientColor);
+		_gl.uniform3fv(u_Material_specularColor, material.specularColor);
+		_gl.uniform1f(u_Material_specularExponent, material.specularExponent);
 
 
-		var u_IsUseDiffuseMap = gl.getUniformLocation(gl.shaderProgram, "u_IsUseDiffuseMap");
+		var u_IsUseDiffuseMap = _gl.getUniformLocation(_gl.shaderProgram, "u_IsUseDiffuseMap");
 
 		if (mesh.hasTextureCoords && diffuseMap && _state.isUseDiffuseMap) {
 	
-			gl.uniform1i(u_IsUseDiffuseMap, 1);
+			_gl.uniform1i(u_IsUseDiffuseMap, 1);
 	
-			var u_DiffuseMap = gl.getUniformLocation(gl.shaderProgram, "u_DiffuseMap");
-			gl.uniform1i(u_DiffuseMap, 0);
+			var u_DiffuseMap = _gl.getUniformLocation(_gl.shaderProgram, "u_DiffuseMap");
+			_gl.uniform1i(u_DiffuseMap, 0);
 	
-			gl.activeTexture(gl.TEXTURE0);
-			gl.bindTexture(gl.TEXTURE_2D, diffuseMap.object);
+			_gl.activeTexture(_gl.TEXTURE0);
+			_gl.bindTexture(_gl.TEXTURE_2D, diffuseMap.object);
 		}
 		else {
-			gl.uniform1i(u_IsUseDiffuseMap, 0);
+			_gl.uniform1i(u_IsUseDiffuseMap, 0);
 		}
 
 
-		var u_IsUseNormalMap = gl.getUniformLocation(gl.shaderProgram, "u_IsUseNormalMap");
+		var u_IsUseNormalMap = _gl.getUniformLocation(_gl.shaderProgram, "u_IsUseNormalMap");
 
 		if (mesh.hasTextureCoords && mesh.hasTangents && normalMap && _state.isUseNormalMap) {
 	
-			gl.uniform1i(u_IsUseNormalMap, 1);
+			_gl.uniform1i(u_IsUseNormalMap, 1);
 	
-			var u_NormalMap = gl.getUniformLocation(gl.shaderProgram, "u_NormalMap");
-			gl.uniform1i(u_NormalMap, 1);
+			var u_NormalMap = _gl.getUniformLocation(_gl.shaderProgram, "u_NormalMap");
+			_gl.uniform1i(u_NormalMap, 1);
 	
-			gl.activeTexture(gl.TEXTURE1);
-			gl.bindTexture(gl.TEXTURE_2D, normalMap.object);
+			_gl.activeTexture(_gl.TEXTURE1);
+			_gl.bindTexture(_gl.TEXTURE_2D, normalMap.object);
 		}
 		else {	
-			gl.uniform1i(u_IsUseNormalMap, 0);
+			_gl.uniform1i(u_IsUseNormalMap, 0);
 		}
 
 	
 		// Draw mesh
 		let vao = mesh.vao;
 	
-		gl.bindVertexArray(vao);
-		gl.drawElements(gl.TRIANGLES, mesh.indices.length, gl.UNSIGNED_SHORT, 0);
-		gl.bindVertexArray(null);
+		_gl.bindVertexArray(vao);
+		_gl.drawElements(_gl.TRIANGLES, mesh.indices.length, _gl.UNSIGNED_SHORT, 0);
+		_gl.bindVertexArray(null);
 
 		
 	}
@@ -280,47 +272,46 @@ function drawModel(gl, model, vpMatrix) {
 function start() {
 	
 	let canvas = document.getElementById("glCanvas");	
-	let gl = initWebGL(canvas);
+	_gl = initWebGL(canvas);
 
-	if (!gl) {		
+	if (!_gl) {		
 		console.log("WebGL is not initializing!");
 		return;
 	}
 
 	// GL init
-	gl.clearColor(0.7, 0.7, 0.7, 1.0);
-	gl.viewport(0, 0, canvas.width, canvas.height);
-	gl.enable(gl.DEPTH_TEST);
+	_gl.clearColor(0.7, 0.7, 0.7, 1.0);
+	_gl.viewport(0, 0, canvas.width, canvas.height);
+	_gl.enable(gl.DEPTH_TEST);
 
 
-	_resourceManager = new ResourceManager(gl);
-	_resourceManager.onload = () => { render(canvas, gl); }
+	_resourceManager = new ResourceManager(_gl);
+	_resourceManager.onload = () => { render(canvas); }
 	_resourceManager.loadResources();
 
 }
 
-function render(canvas, gl) {
+function render(canvas) {
 
 	let aspect = canvas.width / canvas.height;			
-	let shaderProgram = createShaderProgram(gl, FSHADER_SOURCE, VSHADER_SOURCE);	
+	let shaderProgram = createShaderProgram(_gl, FSHADER_SOURCE, VSHADER_SOURCE);	
 	
-	gl.useProgram(shaderProgram);
-	gl.shaderProgram = shaderProgram;	
+	_gl.useProgram(shaderProgram);
+	_gl.shaderProgram = shaderProgram;	
 	
-	initModels(gl);
-	setLightAttributes(gl);
-
-
 	_camera = new Camera(aspect);
-	_camera.lookAt([0, 2, 6], [0, 0, 0], [0, 1, 0]);
-	setCameraAttributes(gl, [0, 2, 6]);
+
+	setLightAttributes();
+
+	initModels(gl, _models, _resourceManager);
+	setCurrentModel('cube');
 
 	(function animloop(){		
-		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+		_gl.clear(_gl.COLOR_BUFFER_BIT | _gl.DEPTH_BUFFER_BIT);
 
 		let vpMatrix = _camera.getVPMatrix();
-		drawModel(gl, _models.plane, vpMatrix);
-		drawModel(gl, _state.currentModel, vpMatrix);		
+		drawModel(_models['plane'].model, vpMatrix);
+		drawModel(_models[_state.currentModel].model, vpMatrix);		
 		updateCurrentModel(1.0 / 60.0);
 
 		requestAnimFrame(animloop);		
