@@ -179,7 +179,7 @@ function initModels(gl, models, resourceManager) {
 		camCenter:[0, 0, 0]
 	};	
 
-	models['cube'].model = CreateCube('brick.JPG', 'brick_norm.JPG');
+	models['cube'].model = CreateCube('brick.jpg', 'brick_norm.jpg');
 	models['cube'].model.init(gl);
 
 	// Barrel

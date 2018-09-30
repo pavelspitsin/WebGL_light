@@ -19,8 +19,8 @@ const TEXTURES_RESOURCES = [
     'barrel.png',
     'barrelNormal.png',
 
-    'brick.JPG', 
-    'brick_norm.JPG'
+    'brick.jpg', 
+    'brick_norm.jpg'
 ];
 
 const MODELS_RESOURCES = [
