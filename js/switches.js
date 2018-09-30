@@ -4,7 +4,7 @@ class CrysisAudio {
     constructor() {
         let url = './resources/Music/crysis2.ogg';
         this._crysisAudio = new Audio(url);
-        this._crysisAudio.volume = 0.5;
+        this._crysisAudio.volume = 0.1;
         this.btnElement = document.getElementById('musicBtn');
     }
 
