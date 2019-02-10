@@ -9,3 +9,6 @@ At the moment the following is done:
   
 The nanosuit model is taken from: https://github.com/JoeyDeVries/LearnOpenGL  
 The barrel model is taken from (link in description): https://www.youtube.com/watch?v=4DUfwAEx4Ts&t=271s
+
+
+You can see the result [here](https://pavelspitsin.github.io/demos/WebGLRender.html).
